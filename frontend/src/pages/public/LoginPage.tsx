@@ -22,6 +22,7 @@ export function LoginPage() {
   const location = useLocation()
   const saveLogin = useAuthStore((state) => state.login)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submittedEmail, setSubmittedEmail] = useState('')
   const successMessage = (
     location.state as { successMessage?: string } | null
   )?.successMessage
@@ -46,6 +47,7 @@ export function LoginPage() {
         { replace: true },
       )
     } catch (error: unknown) {
+      setSubmittedEmail(values.email)
       setSubmitError(getAuthErrorMessage(error, 'Unable to log in'))
     }
   }
@@ -61,9 +63,17 @@ export function LoginPage() {
         </p>
       ) : null}
       {submitError ? (
-        <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-          {submitError}
-        </p>
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <p>{submitError}</p>
+          {submitError.toLowerCase().includes('verify your email') ? (
+            <Link
+              className="mt-2 inline-flex font-semibold text-red-800 underline"
+              to={`/verify-email?email=${encodeURIComponent(submittedEmail)}`}
+            >
+              Verify your email
+            </Link>
+          ) : null}
+        </div>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <FormField
@@ -82,6 +92,14 @@ export function LoginPage() {
           type="password"
           {...register('password')}
         />
+        <div className="text-right">
+          <Link
+            className="text-sm font-semibold text-brand-700 hover:text-brand-900"
+            to="/forgot-password"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <div className="pt-2">
           <SubmitButton isSubmitting={isSubmitting} loadingText="Signing in...">
             Log in

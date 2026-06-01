@@ -20,7 +20,7 @@ type RegisterPayload = {
 }
 
 type RegisterResponse = {
-  user: AuthUser
+  message: string
 }
 
 type ChangePasswordPayload = {
@@ -36,6 +36,10 @@ type ErrorResponse = {
   message?: string | string[]
 }
 
+type MessageResponse = {
+  message: string
+}
+
 export async function login(payload: LoginPayload) {
   const response = await api.post<LoginResponse>('/auth/login', payload)
   return response.data
@@ -49,6 +53,39 @@ export async function register(payload: RegisterPayload) {
 export async function changePassword(payload: ChangePasswordPayload) {
   const response = await api.post<ChangePasswordResponse>(
     '/auth/change-password',
+    payload,
+  )
+  return response.data
+}
+
+export async function verifyEmail(payload: { email: string; otp: string }) {
+  const response = await api.post<MessageResponse>('/auth/verify-email', payload)
+  return response.data
+}
+
+export async function resendVerification(payload: { email: string }) {
+  const response = await api.post<MessageResponse>(
+    '/auth/resend-verification',
+    payload,
+  )
+  return response.data
+}
+
+export async function forgotPassword(payload: { email: string }) {
+  const response = await api.post<MessageResponse>(
+    '/auth/forgot-password',
+    payload,
+  )
+  return response.data
+}
+
+export async function resetPassword(payload: {
+  email: string
+  otp: string
+  newPassword: string
+}) {
+  const response = await api.post<MessageResponse>(
+    '/auth/reset-password',
     payload,
   )
   return response.data

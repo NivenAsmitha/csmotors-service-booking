@@ -47,9 +47,9 @@ export function RegisterPage() {
         ...(values.phone ? { phone: values.phone } : {}),
         password: values.password,
       })
-      navigate('/login', {
+      navigate(`/verify-email?email=${encodeURIComponent(values.email)}`, {
         replace: true,
-        state: { successMessage: 'Registration successful. You can now log in.' },
+        state: { successMessage: 'Check your email for verification code.' },
       })
     } catch (error: unknown) {
       setSubmitError(getAuthErrorMessage(error, 'Unable to register'))

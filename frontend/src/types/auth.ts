@@ -12,5 +12,6 @@ export type AuthUser = {
   phone?: string | null
   role: UserRole
   is_active?: boolean
+  email_verified?: boolean
   must_change_password: boolean
 }

@@ -23,6 +23,9 @@ import { LoginPage } from '../pages/public/LoginPage'
 import { RegisterPage } from '../pages/public/RegisterPage'
 import { ChangePasswordPage } from '../pages/public/ChangePasswordPage'
 import { NotFoundPage } from '../pages/public/NotFoundPage'
+import { VerifyEmailPage } from '../pages/public/VerifyEmailPage'
+import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/public/ResetPasswordPage'
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +34,9 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
   {
