@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  developer
+  admin
+  it_support
+  employee
+  client
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  in_progress
+  completed
+  cancelled
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  name                 String
+  email                String   @unique
+  phone                String?
+  password_hash        String
+  role                 UserRole
+  is_active            Boolean  @default(true)
+  must_change_password Boolean  @default(false)
+  email_verified       Boolean  @default(false)
+  email_verification_token      String?
+  email_verification_expires_at DateTime?
+  password_reset_token          String?
+  password_reset_expires_at     DateTime?
+
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  bookings             Booking[]     @relation("ClientBookings")
+  employeeAssignments  Assignment[]  @relation("EmployeeAssignments")
+  assignedAssignments  Assignment[]  @relation("AssignedByAssignments")
+  clientReviews        Review[]      @relation("ClientReviews")
+  employeeReviews      Review[]      @relation("EmployeeReviews")
+  createdDaySlots      DaySlot[]     @relation("DaySlotCreatedBy")
+  dayClosures          DayClosure[]  @relation("DayClosureClosedBy")
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Service {
+  id                    String   @id @default(uuid())
+  name                  String   @unique
+  duration_minutes      Int
+  max_bookings_per_slot Int
+  is_active             Boolean  @default(true)
+
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  timeSlots             TimeSlot[]
+
+  @@map("services")
+}
+
+model TimeSlot {
+  id          String   @id @default(uuid())
+  service_id String
+  label       String
+
+  start_time  DateTime @db.Time
+  end_time    DateTime @db.Time
+
+  is_default  Boolean  @default(true)
+  show_time   Boolean  @default(true)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  service     Service  @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  daySlots    DaySlot[]
+
+  @@index([service_id])
+  @@index([show_time])
+  @@map("time_slots")
+}
+
+model DaySlot {
+  id                 String   @id @default(uuid())
+  slot_id            String
+  date               DateTime @db.Date
+  max_bookings       Int
+  is_closed          Boolean  @default(false)
+  show_time_override Boolean?
+
+  created_by         String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  slot               TimeSlot @relation(fields: [slot_id], references: [id], onDelete: Cascade)
+  createdBy          User?    @relation("DaySlotCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+
+  bookings           Booking[]
+
+  @@unique([slot_id, date])
+  @@index([date])
+  @@index([is_closed])
+  @@index([created_by])
+  @@map("day_slots")
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  client_id   String
+  day_slot_id String
+  status      BookingStatus @default(pending)
+  notes       String?
+  bike_number String?
+  bike_model  String?
+
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  client      User          @relation("ClientBookings", fields: [client_id], references: [id], onDelete: Restrict)
+  daySlot     DaySlot       @relation(fields: [day_slot_id], references: [id], onDelete: Restrict)
+
+  assignment  Assignment?
+  review      Review?
+
+  @@index([client_id])
+  @@index([day_slot_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("bookings")
+}
+
+model Assignment {
+  id             String   @id @default(uuid())
+  booking_id     String   @unique
+  employee_id    String
+  vehicle_ref    String
+  assigned_by    String?
+
+  assigned_at    DateTime @default(now())
+  scheduled_time DateTime? @db.Time
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  booking        Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  employee       User    @relation("EmployeeAssignments", fields: [employee_id], references: [id], onDelete: Restrict)
+  assignedBy     User?   @relation("AssignedByAssignments", fields: [assigned_by], references: [id], onDelete: SetNull)
+
+  @@index([employee_id])
+  @@index([assigned_by])
+  @@index([assigned_at])
+  @@map("assignments")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  booking_id  String   @unique
+  client_id   String
+  employee_id String
+  rating      Int
+  comment     String?
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  booking     Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  client      User    @relation("ClientReviews", fields: [client_id], references: [id], onDelete: Restrict)
+  employee    User    @relation("EmployeeReviews", fields: [employee_id], references: [id], onDelete: Restrict)
+
+  @@index([client_id])
+  @@index([employee_id])
+  @@index([rating])
+  @@index([created_at])
+  @@map("reviews")
+}
+
+model DayClosure {
+  id         String   @id @default(uuid())
+  date       DateTime @unique @db.Date
+  closed_by  String?
+  reason     String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  closedBy   User?    @relation("DayClosureClosedBy", fields: [closed_by], references: [id], onDelete: SetNull)
+
+  @@index([closed_by])
+  @@map("day_closures")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  user_id    String?
+
+  action     String
+  entity     String
+  entity_id  String?
+  metadata   Json?
+
+  created_at DateTime @default(now())
+
+  user       User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([entity])
+  @@index([entity_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}
