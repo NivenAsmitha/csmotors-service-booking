@@ -33,7 +33,10 @@ export function BookServicePage() {
   const [serviceId, setServiceId] = useState('')
   const [date, setDate] = useState('')
   const [selectedDaySlotId, setSelectedDaySlotId] = useState('')
+  const [bikeNumber, setBikeNumber] = useState('')
+  const [bikeModel, setBikeModel] = useState('')
   const [notes, setNotes] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
   const servicesQuery = useQuery({
     queryKey: ['services'],
     queryFn: getServices,
@@ -64,12 +67,16 @@ export function BookServicePage() {
   }
 
   function submitBooking() {
-    if (!selectedDaySlotId) {
+    if (!selectedDaySlotId || !bikeNumber.trim() || !bikeModel.trim()) {
+      setFormError('Select a slot and enter both bike details.')
       return
     }
 
+    setFormError(null)
     bookingMutation.mutate({
       day_slot_id: selectedDaySlotId,
+      bike_number: bikeNumber.trim(),
+      bike_model: bikeModel.trim(),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
     })
   }
@@ -180,7 +187,7 @@ export function BookServicePage() {
               onClick={() => setSelectedDaySlotId(slot.day_slot_id)}
               type="button"
             >
-              <span className="block font-semibold">{slot.display_label}</span>
+              <span className="block font-semibold">{slot.label}</span>
               {slot.display_time && slot.start_time && slot.end_time ? (
                 <span className="mt-2 flex items-center gap-1.5 text-xs">
                   <Clock3 aria-hidden="true" className="size-3.5" />
@@ -198,13 +205,53 @@ export function BookServicePage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-lg font-bold text-slate-900">4. Add notes</h2>
+        <h2 className="text-lg font-bold text-slate-900">
+          4. Add bike details
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700">
+              Bike Number
+            </span>
+            <input
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              maxLength={30}
+              onChange={(event) => setBikeNumber(event.target.value)}
+              placeholder="WP ABC-1234"
+              required
+              value={bikeNumber}
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700">
+              Bike Model
+            </span>
+            <input
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+              maxLength={80}
+              onChange={(event) => setBikeModel(event.target.value)}
+              placeholder="Pulsar N160, CT100, Honda Dio"
+              required
+              value={bikeModel}
+            />
+          </label>
+        </div>
+        <label className="mt-4 block">
+          <span className="text-sm font-semibold text-slate-700">
+            Notes (optional)
+          </span>
         <textarea
-          className="mt-4 min-h-28 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+          className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
           onChange={(event) => setNotes(event.target.value)}
-          placeholder="Optional details about your vehicle or service request"
+          placeholder="Optional details about your bike or service request"
           value={notes}
         />
+        </label>
+        {formError ? (
+          <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            {formError}
+          </p>
+        ) : null}
         {bookingMutation.isError ? (
           <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
             {getApiErrorMessage(
@@ -215,7 +262,12 @@ export function BookServicePage() {
         ) : null}
         <button
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={!selectedDaySlotId || bookingMutation.isPending}
+          disabled={
+            !selectedDaySlotId ||
+            !bikeNumber.trim() ||
+            !bikeModel.trim() ||
+            bookingMutation.isPending
+          }
           onClick={submitBooking}
           type="button"
         >

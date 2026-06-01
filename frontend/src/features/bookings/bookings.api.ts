@@ -4,6 +4,8 @@ import type { Booking, BookingStatus } from '../../types/booking'
 type CreateBookingPayload = {
   day_slot_id: string
   notes?: string
+  bike_number: string
+  bike_model: string
 }
 
 export async function createBooking(payload: CreateBookingPayload) {

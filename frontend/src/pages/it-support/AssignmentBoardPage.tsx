@@ -23,7 +23,7 @@ import { formatDate, getLocalDateKey } from '../../utils/dates'
 
 const assignmentSchema = z.object({
   employee_id: z.string().min(1, 'Select an employee'),
-  vehicle_ref: z.string().trim().min(1, 'Vehicle reference is required'),
+  vehicle_ref: z.string().trim().min(1, 'Bike reference is required'),
   scheduled_time: z
     .string()
     .refine(
@@ -68,7 +68,7 @@ export function AssignmentBoardPage() {
           Assignment Board
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Assign service work, vehicle references, and scheduled workshop times.
+          Assign service work, bike references, and scheduled workshop times.
         </p>
       </section>
 
@@ -129,12 +129,14 @@ export function AssignmentBoardPage() {
               <p><span className="font-semibold text-slate-800">Slot:</span> {booking.slot_label}</p>
               <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.date)}</p>
               <p><span className="font-semibold text-slate-800">Exact time:</span> {booking.start_time} - {booking.end_time}</p>
+              <p><span className="font-semibold text-slate-800">Bike Number:</span> {booking.bike_number || 'Not provided'}</p>
+              <p><span className="font-semibold text-slate-800">Bike Model:</span> {booking.bike_model || 'Not provided'}</p>
             </div>
             <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
               {booking.assignment ? (
                 <>
                   <p><span className="font-semibold text-slate-800">Employee:</span> {booking.assignment.employee_name}</p>
-                  <p className="mt-1"><span className="font-semibold text-slate-800">Vehicle:</span> {booking.assignment.vehicle_ref || 'Not provided'}</p>
+                  <p className="mt-1"><span className="font-semibold text-slate-800">Bike reference:</span> {booking.assignment.vehicle_ref || 'Not provided'}</p>
                   <p className="mt-1"><span className="font-semibold text-slate-800">Scheduled:</span> {booking.assignment.scheduled_time || 'Not set'}</p>
                 </>
               ) : (
@@ -266,8 +268,8 @@ function AssignmentModal({
         />
         <Input
           error={errors.vehicle_ref?.message}
-          label="Vehicle reference"
-          placeholder="WP CAB-1234"
+          label="Bike reference"
+          placeholder="WP ABC-1234"
           {...register('vehicle_ref')}
         />
         <Input

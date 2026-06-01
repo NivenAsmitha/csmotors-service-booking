@@ -13,15 +13,15 @@ import {
   getServiceSlots,
   getSlotsConfig,
   updateDaySlotClosed,
-  updateDaySlotTimeMode,
-  updateSlotTimeMode,
 } from '../../features/slots/slots.api'
+import {
+  getGlobalTimeMode,
+  updateGlobalTimeMode,
+} from '../../features/settings/settings.api'
 import { useAuthStore } from '../../stores/auth.store'
 import type { Slot } from '../../types/service'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate } from '../../utils/dates'
-
-type OverrideValue = 'inherit' | 'active' | 'inactive'
 
 export function AdminSlotsPage() {
   const currentUser = useAuthStore((state) => state.user)
@@ -35,6 +35,10 @@ export function AdminSlotsPage() {
   const configQuery = useQuery({
     queryKey: ['slots-config'],
     queryFn: getSlotsConfig,
+  })
+  const globalTimeModeQuery = useQuery({
+    queryKey: ['global-time-mode'],
+    queryFn: getGlobalTimeMode,
   })
   const datedSlotsQuery = useQuery({
     queryKey: ['service-slots', serviceId, date],
@@ -64,25 +68,15 @@ export function AdminSlotsPage() {
     queryClient.invalidateQueries({ queryKey: ['service-slots', serviceId, date] })
   const refreshClosures = () =>
     queryClient.invalidateQueries({ queryKey: ['day-closures'] })
-  const defaultModeMutation = useMutation({
-    mutationFn: ({ id, showTime }: { id: string; showTime: boolean }) =>
-      updateSlotTimeMode(id, showTime),
+  const globalTimeModeMutation = useMutation({
+    mutationFn: updateGlobalTimeMode,
     onSuccess: async () => {
-      setSuccessMessage('Default slot time mode updated.')
-      await Promise.all([refreshConfig(), refreshDatedSlots()])
-    },
-  })
-  const overrideMutation = useMutation({
-    mutationFn: ({
-      id,
-      override,
-    }: {
-      id: string
-      override: boolean | null
-    }) => updateDaySlotTimeMode(id, override),
-    onSuccess: async () => {
-      setSuccessMessage('Date slot override updated.')
-      await refreshDatedSlots()
+      setSuccessMessage('Global client time display updated.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['global-time-mode'] }),
+        refreshConfig(),
+        refreshDatedSlots(),
+      ])
     },
   })
   const closedMutation = useMutation({
@@ -110,8 +104,7 @@ export function AdminSlotsPage() {
     },
   })
   const mutationError =
-    defaultModeMutation.error ??
-    overrideMutation.error ??
+    globalTimeModeMutation.error ??
     closedMutation.error ??
     createClosureMutation.error ??
     deleteClosureMutation.error
@@ -145,8 +138,8 @@ export function AdminSlotsPage() {
           Slot Management
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Control default time visibility, date-specific slot behavior, and
-          full-day closures.
+          Control customer time visibility, slot availability, and full-day
+          closures.
         </p>
       </section>
 
@@ -168,7 +161,51 @@ export function AdminSlotsPage() {
       ) : null}
 
       <PageSection
-        description="These settings control the default visibility of exact times for each service slot."
+        description="When enabled, customers see exact booking times. When disabled, customers see only slot labels."
+        title="Client Time Display"
+      >
+        {globalTimeModeQuery.isPending ? (
+          <LoadingText text="Loading global time display status..." />
+        ) : null}
+        {globalTimeModeQuery.isError ? (
+          <ErrorText
+            error={globalTimeModeQuery.error}
+            fallback="Unable to load global time display status"
+          />
+        ) : null}
+        {globalTimeModeQuery.data ? (
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div>
+              <Badge
+                variant={globalTimeModeQuery.data.show_time ? 'success' : 'warning'}
+              >
+                {globalTimeModeQuery.data.show_time ? 'Active' : 'Inactive'}
+              </Badge>
+              <p className="mt-2 text-sm font-semibold text-slate-800">
+                {globalTimeModeQuery.data.show_time
+                  ? 'Customers see exact time'
+                  : 'Customers see slot labels only'}
+              </p>
+            </div>
+            <Button
+              disabled={isReadOnly || globalTimeModeMutation.isPending}
+              onClick={() =>
+                globalTimeModeMutation.mutate(
+                  !globalTimeModeQuery.data.show_time,
+                )
+              }
+              variant="secondary"
+            >
+              {globalTimeModeQuery.data.show_time
+                ? 'Deactivate Time Showing'
+                : 'Activate Time Showing'}
+            </Button>
+          </div>
+        ) : null}
+      </PageSection>
+
+      <PageSection
+        description="Exact times remain visible here for internal scheduling. Customer visibility is controlled by the global setting above."
         title="Default Slot Configuration"
       >
         {configQuery.isPending ? <LoadingText text="Loading slot configuration..." /> : null}
@@ -188,8 +225,6 @@ export function AdminSlotsPage() {
                     <tr>
                       <th className="px-4 py-3 font-semibold">Label</th>
                       <th className="px-4 py-3 font-semibold">Exact time</th>
-                      <th className="px-4 py-3 font-semibold">Time mode</th>
-                      <th className="px-4 py-3 font-semibold">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -197,21 +232,6 @@ export function AdminSlotsPage() {
                       <tr key={slot.id}>
                         <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">{slot.label}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-slate-600">{slot.start_time} - {slot.end_time}</td>
-                        <td className="whitespace-nowrap px-4 py-3">
-                          <Badge variant={slot.show_time ? 'success' : 'warning'}>
-                            {slot.show_time ? 'Active Time' : 'Hidden Time'}
-                          </Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3">
-                          <Button
-                            className="px-3 py-2"
-                            disabled={isReadOnly || defaultModeMutation.isPending}
-                            onClick={() => defaultModeMutation.mutate({ id: slot.id, showTime: !slot.show_time })}
-                            variant="secondary"
-                          >
-                            {slot.show_time ? 'Set Inactive' : 'Set Active'}
-                          </Button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -223,8 +243,8 @@ export function AdminSlotsPage() {
       </PageSection>
 
       <PageSection
-        description="Choose a service and date to override visibility or open and close individual slots."
-        title="Date Slot Override"
+        description="Choose a service and date to open or close individual slots. Exact times remain visible for internal scheduling."
+        title="Date Slot Availability"
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
@@ -248,7 +268,7 @@ export function AdminSlotsPage() {
               <article className="rounded-xl border border-slate-200 p-4" key={slot.day_slot_id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-slate-900">{slot.display_label}</h3>
+                    <h3 className="font-bold text-slate-900">{slot.label}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
                       <Clock3 aria-hidden="true" className="size-3.5" />
                       {exactTime ? `${exactTime.start_time} - ${exactTime.end_time}` : 'Exact time unavailable'}
@@ -259,7 +279,6 @@ export function AdminSlotsPage() {
                     <Badge variant={slot.display_time ? 'success' : 'warning'}>
                       {slot.display_time ? 'Active Time' : 'Hidden Time'}
                     </Badge>
-                    <OverrideBadge value={slot.show_time_override} />
                     <AvailabilityBadge slot={slot} />
                   </div>
                 </div>
@@ -267,23 +286,7 @@ export function AdminSlotsPage() {
                   Booked: {slot.booked_count} / {slot.max_bookings}
                   {slot.reason ? ` | Reason: ${formatReason(slot.reason)}` : ''}
                 </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                  <Select
-                    disabled={isReadOnly || overrideMutation.isPending}
-                    label="Time override"
-                    onChange={(event) =>
-                      overrideMutation.mutate({
-                        id: slot.day_slot_id,
-                        override: toOverrideValue(event.target.value as OverrideValue),
-                      })
-                    }
-                    options={[
-                      { label: 'Inherit', value: 'inherit' },
-                      { label: 'Force Active', value: 'active' },
-                      { label: 'Force Inactive', value: 'inactive' },
-                    ]}
-                    value={fromOverrideValue(slot.show_time_override)}
-                  />
+                <div className="mt-4 flex justify-end">
                   <Button
                     disabled={isReadOnly || closedMutation.isPending}
                     onClick={() => closedMutation.mutate({ id: slot.day_slot_id, isClosed: !slot.is_closed })}
@@ -407,18 +410,6 @@ function AvailabilityBadge({ slot }: { slot: Slot }) {
   return <Badge variant="success">Available</Badge>
 }
 
-function OverrideBadge({ value }: { value?: boolean | null }) {
-  if (value === true) {
-    return <Badge variant="info">Force Active</Badge>
-  }
-
-  if (value === false) {
-    return <Badge variant="warning">Force Inactive</Badge>
-  }
-
-  return <Badge>Inherit</Badge>
-}
-
 function LoadingText({ text }: { text: string }) {
   return <p className="mt-4 text-sm text-slate-500">{text}</p>
 }
@@ -429,30 +420,6 @@ function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
       {getApiErrorMessage(error, fallback)}
     </p>
   )
-}
-
-function fromOverrideValue(value?: boolean | null): OverrideValue {
-  if (value === true) {
-    return 'active'
-  }
-
-  if (value === false) {
-    return 'inactive'
-  }
-
-  return 'inherit'
-}
-
-function toOverrideValue(value: OverrideValue) {
-  if (value === 'active') {
-    return true
-  }
-
-  if (value === 'inactive') {
-    return false
-  }
-
-  return null
 }
 
 function formatReason(reason: string) {

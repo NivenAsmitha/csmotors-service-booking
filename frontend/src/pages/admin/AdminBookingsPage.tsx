@@ -193,6 +193,12 @@ export function AdminBookingsPage() {
                       <td className="whitespace-nowrap px-4 py-3">
                         <p className="font-semibold text-slate-900">{slot.service.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{slot.label}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {booking.bike_number || 'No bike number'}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {booking.bike_model || 'No bike model'}
+                        </p>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <p>{formatDate(booking.daySlot.date)}</p>
@@ -207,7 +213,7 @@ export function AdminBookingsPage() {
                           <>
                             <p>{employeesById.get(assignment.employee_id) ?? 'Assigned employee'}</p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {assignment.vehicle_ref || 'No vehicle reference'}
+                              {assignment.vehicle_ref || 'No bike reference'}
                             </p>
                           </>
                         ) : (

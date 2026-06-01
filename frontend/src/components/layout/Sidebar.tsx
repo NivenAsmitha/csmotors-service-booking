@@ -10,9 +10,9 @@ type NavigationItem = {
 const navigationByRole: Record<UserRole, NavigationItem[]> = {
   developer: [
     { label: 'Dashboard', to: '/developer/dashboard' },
-    { label: 'Admin Summary', to: '/admin/dashboard' },
-    { label: 'Manage Users', to: '/admin/users' },
-    { label: 'Assignment Board', to: '/it-support/assignments' },
+    { label: 'Users', to: '/admin/users' },
+    { label: 'Bookings', to: '/admin/bookings' },
+    { label: 'Reports', to: '/admin/reports' },
     { label: 'Audit Logs', to: '/developer/audit-logs' },
   ],
   admin: [
@@ -20,17 +20,16 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     { label: 'Users', to: '/admin/users' },
     { label: 'Slots', to: '/admin/slots' },
     { label: 'Bookings', to: '/admin/bookings' },
-    { label: 'Assignment Board', to: '/it-support/assignments' },
-    { label: 'Reports', to: '/admin/reports' },
     { label: 'Reviews', to: '/admin/reviews' },
+    { label: 'Reports', to: '/admin/reports' },
   ],
   it_support: [
     { label: 'Dashboard', to: '/it-support/dashboard' },
-    { label: 'Assignments', to: '/it-support/assignments' },
+    { label: 'Assignment Board', to: '/it-support/assignments' },
   ],
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard' },
-    { label: 'Reviews', to: '/employee/reviews' },
+    { label: 'My Reviews', to: '/employee/reviews' },
   ],
   client: [
     { label: 'Dashboard', to: '/client/dashboard' },

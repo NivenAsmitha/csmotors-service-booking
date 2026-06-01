@@ -11,6 +11,7 @@ type StoredAuth = {
 type AuthState = {
   user: AuthUser | null
   accessToken: string | null
+  hasHydrated: boolean
   isAuthenticated: boolean
   login: (user: AuthUser, accessToken: string) => void
   logout: () => void
@@ -50,26 +51,38 @@ export function getStoredAccessToken() {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
+  hasHydrated: false,
   isAuthenticated: false,
   login: (user, accessToken) => {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, accessToken }))
-    set({ user, accessToken, isAuthenticated: true })
+    set({ user, accessToken, hasHydrated: true, isAuthenticated: true })
   },
   logout: () => {
     localStorage.removeItem(AUTH_STORAGE_KEY)
-    set({ user: null, accessToken: null, isAuthenticated: false })
+    set({
+      user: null,
+      accessToken: null,
+      hasHydrated: true,
+      isAuthenticated: false,
+    })
   },
   loadFromStorage: () => {
     const storedAuth = readStoredAuth()
 
     if (!storedAuth) {
-      set({ user: null, accessToken: null, isAuthenticated: false })
+      set({
+        user: null,
+        accessToken: null,
+        hasHydrated: true,
+        isAuthenticated: false,
+      })
       return
     }
 
     set({
       user: storedAuth.user,
       accessToken: storedAuth.accessToken,
+      hasHydrated: true,
       isAuthenticated: true,
     })
   },

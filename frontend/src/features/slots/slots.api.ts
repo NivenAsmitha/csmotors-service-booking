@@ -27,23 +27,6 @@ export async function getServiceSlots(serviceId: string, date: string) {
   return response.data
 }
 
-export async function updateSlotTimeMode(slotId: string, show_time: boolean) {
-  const response = await api.patch<TimeSlot>(`/slots/${slotId}/time-mode`, {
-    show_time,
-  })
-  return response.data
-}
-
-export async function updateDaySlotTimeMode(
-  daySlotId: string,
-  show_time_override: boolean | null,
-) {
-  const response = await api.patch(`/day-slots/${daySlotId}/time-mode`, {
-    show_time_override,
-  })
-  return response.data
-}
-
 export async function updateDaySlotClosed(
   daySlotId: string,
   is_closed: boolean,

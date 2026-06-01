@@ -17,6 +17,8 @@ export type CreateAssignmentPayload = AssignmentPayload & {
 export type AssignmentBoardItem = {
   booking_id: string
   status: BookingStatus
+  bike_number?: string | null
+  bike_model?: string | null
   client: BookingClient
   service_name: string
   slot_label: string
@@ -42,6 +44,8 @@ export type EmployeeAssignment = {
     id: string
     status: BookingStatus
     notes?: string | null
+    bike_number?: string | null
+    bike_model?: string | null
     client: BookingClient
     daySlot: {
       date: string

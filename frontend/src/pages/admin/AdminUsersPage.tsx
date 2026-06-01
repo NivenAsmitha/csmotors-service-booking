@@ -59,6 +59,7 @@ const activeFilterOptions = [
 
 export function AdminUsersPage() {
   const currentUser = useAuthStore((state) => state.user)
+  const isReadOnly = currentUser?.role === 'developer'
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
@@ -110,12 +111,19 @@ export function AdminUsersPage() {
             Create internal users, update account details, and deactivate access.
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus aria-hidden="true" className="size-4" />
-          Create User
-        </Button>
+        {!isReadOnly ? (
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus aria-hidden="true" className="size-4" />
+            Create User
+          </Button>
+        ) : null}
       </section>
 
+      {isReadOnly ? (
+        <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
+          Developer read-only
+        </p>
+      ) : null}
       {successMessage ? (
         <p className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-900">
           {successMessage}
@@ -206,26 +214,30 @@ export function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <div className="flex gap-2">
-                        <Button
-                          className="px-3 py-2"
-                          onClick={() => setEditTarget(user)}
-                          variant="secondary"
-                        >
-                          <Pencil aria-hidden="true" className="size-3.5" />
-                          Edit
-                        </Button>
-                        {user.is_active ? (
+                      {isReadOnly ? (
+                        <span className="text-xs text-slate-500">Read only</span>
+                      ) : (
+                        <div className="flex gap-2">
                           <Button
                             className="px-3 py-2"
-                            onClick={() => setDeactivateTarget(user)}
-                            variant="danger"
+                            onClick={() => setEditTarget(user)}
+                            variant="secondary"
                           >
-                            <UserRoundX aria-hidden="true" className="size-3.5" />
-                            Deactivate
+                            <Pencil aria-hidden="true" className="size-3.5" />
+                            Edit
                           </Button>
-                        ) : null}
-                      </div>
+                          {user.is_active ? (
+                            <Button
+                              className="px-3 py-2"
+                              onClick={() => setDeactivateTarget(user)}
+                              variant="danger"
+                            >
+                              <UserRoundX aria-hidden="true" className="size-3.5" />
+                              Deactivate
+                            </Button>
+                          ) : null}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

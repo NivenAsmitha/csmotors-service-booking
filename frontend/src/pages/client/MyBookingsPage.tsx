@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Clock3 } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   cancelBooking,
   getMyBookings,
@@ -111,11 +111,23 @@ export function MyBookingsPage() {
                 </span>
               </div>
               <div className="mt-4 space-y-2 text-sm text-slate-600">
+                <p>
+                  <span className="font-semibold text-slate-800">
+                    Bike Number:
+                  </span>{' '}
+                  {booking.bike_number || 'Not provided'}
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">
+                    Bike Model:
+                  </span>{' '}
+                  {booking.bike_model || 'Not provided'}
+                </p>
                 <p className="flex items-center gap-2">
                   <CalendarDays aria-hidden="true" className="size-4" />
                   {formatDate(booking.daySlot.date)}
                 </p>
-                {slot.start_time && slot.end_time ? (
+                {slot.display_time && slot.start_time && slot.end_time ? (
                   <p className="flex items-center gap-2">
                     <Clock3 aria-hidden="true" className="size-4" />
                     {slot.start_time} - {slot.end_time}
@@ -139,6 +151,14 @@ export function MyBookingsPage() {
                     ? 'Cancelling...'
                     : 'Cancel booking'}
                 </button>
+              ) : null}
+              {booking.status === 'completed' && !booking.review ? (
+                <Link
+                  className="mt-5 inline-flex rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  to={`/client/reviews/new?bookingId=${booking.id}`}
+                >
+                  Leave Review
+                </Link>
               ) : null}
             </article>
           )

@@ -13,6 +13,7 @@ export type BookingSlot = {
   label: string
   show_time: boolean
   display_time: boolean
+  display_label: string
   start_time?: string
   end_time?: string
   service: Service
@@ -54,6 +55,8 @@ export type Booking = {
   day_slot_id: string
   status: BookingStatus
   notes?: string | null
+  bike_number?: string | null
+  bike_model?: string | null
   created_at: string
   updated_at: string
   client: BookingClient

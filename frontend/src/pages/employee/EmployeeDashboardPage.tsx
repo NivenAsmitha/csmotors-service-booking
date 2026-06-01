@@ -96,7 +96,9 @@ export function EmployeeDashboardPage() {
                 <p><span className="font-semibold text-slate-800">Contact:</span> {booking.client.phone || booking.client.email}</p>
                 <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.daySlot.date)}</p>
                 <p className="flex items-center gap-1.5"><Clock3 aria-hidden="true" className="size-4" /> {slot.start_time} - {slot.end_time}</p>
-                <p><span className="font-semibold text-slate-800">Vehicle:</span> {assignment.vehicle_ref || 'Not provided'}</p>
+                <p><span className="font-semibold text-slate-800">Bike Number:</span> {booking.bike_number || 'Not provided'}</p>
+                <p><span className="font-semibold text-slate-800">Bike Model:</span> {booking.bike_model || 'Not provided'}</p>
+                <p><span className="font-semibold text-slate-800">Bike reference:</span> {assignment.vehicle_ref || 'Not provided'}</p>
                 <p><span className="font-semibold text-slate-800">Scheduled:</span> {assignment.scheduled_time || 'Not set'}</p>
               </div>
               <label className="mt-4 block">

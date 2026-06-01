@@ -58,7 +58,7 @@ export function RegisterPage() {
 
   return (
     <AuthCard
-      description="Create your customer account to schedule and manage vehicle services."
+      description="Create your customer account to schedule and manage bike services."
       title="Create an account"
     >
       {submitError ? (
