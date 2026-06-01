@@ -6,9 +6,10 @@ type ModalProps = {
   isOpen: boolean
   onClose: () => void
   title: string
+  width?: 'md' | 'lg' | 'xl'
 }
 
-export function Modal({ children, isOpen, onClose, title }: ModalProps) {
+export function Modal({ children, isOpen, onClose, title, width = 'md' }: ModalProps) {
   useEffect(() => {
     if (!isOpen) {
       return
@@ -34,7 +35,10 @@ export function Modal({ children, isOpen, onClose, title }: ModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-8"
       role="dialog"
     >
-      <div className="max-h-full w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className={[
+        'max-h-full w-full overflow-y-auto rounded-2xl bg-white shadow-2xl',
+        width === 'xl' ? 'max-w-4xl' : width === 'lg' ? 'max-w-2xl' : 'max-w-lg',
+      ].join(' ')}>
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-950">{title}</h2>
           <button

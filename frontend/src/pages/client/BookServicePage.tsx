@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, CheckCircle2, Clock3 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Badge } from '../../components/ui/Badge'
 import { createBooking } from '../../features/bookings/bookings.api'
 import {
   getServices,
@@ -13,11 +14,11 @@ import { getLocalDateKey } from '../../utils/dates'
 
 function getUnavailableLabel(slot: Slot) {
   if (slot.reason === 'day_closed') {
-    return 'Day closed'
+    return 'Day Closed'
   }
 
   if (slot.is_closed) {
-    return 'Slot closed'
+    return 'Closed'
   }
 
   if (slot.booked_count >= slot.max_bookings) {
@@ -127,6 +128,11 @@ export function BookServicePage() {
             </button>
           ))}
         </div>
+        {formError && !selectedDaySlotId ? (
+          <p className="mt-3 text-xs font-semibold text-red-600">
+            Select an available service slot.
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -187,14 +193,17 @@ export function BookServicePage() {
               onClick={() => setSelectedDaySlotId(slot.day_slot_id)}
               type="button"
             >
-              <span className="block font-semibold">{slot.label}</span>
+              <span className="flex items-start justify-between gap-3">
+                <span className="font-semibold">{slot.label}</span>
+                <SlotAvailabilityBadge slot={slot} />
+              </span>
               {slot.display_time && slot.start_time && slot.end_time ? (
                 <span className="mt-2 flex items-center gap-1.5 text-xs">
                   <Clock3 aria-hidden="true" className="size-3.5" />
                   {slot.start_time} - {slot.end_time}
                 </span>
               ) : null}
-              <span className="mt-2 block text-xs">
+              <span className="mt-3 block text-xs">
                 {slot.available
                   ? `${slot.max_bookings - slot.booked_count} place(s) available`
                   : getUnavailableLabel(slot)}
@@ -221,6 +230,11 @@ export function BookServicePage() {
               required
               value={bikeNumber}
             />
+            {formError && !bikeNumber.trim() ? (
+              <span className="mt-1.5 block text-xs text-red-600">
+                Bike number is required.
+              </span>
+            ) : null}
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">
@@ -234,6 +248,11 @@ export function BookServicePage() {
               required
               value={bikeModel}
             />
+            {formError && !bikeModel.trim() ? (
+              <span className="mt-1.5 block text-xs text-red-600">
+                Bike model is required.
+              </span>
+            ) : null}
           </label>
         </div>
         <label className="mt-4 block">
@@ -277,4 +296,20 @@ export function BookServicePage() {
       </section>
     </div>
   )
+}
+
+function SlotAvailabilityBadge({ slot }: { slot: Slot }) {
+  if (slot.reason === 'day_closed') {
+    return <Badge variant="danger">Day Closed</Badge>
+  }
+
+  if (slot.is_closed) {
+    return <Badge variant="danger">Closed</Badge>
+  }
+
+  if (!slot.available) {
+    return <Badge variant="warning">Full</Badge>
+  }
+
+  return <Badge variant="success">Available</Badge>
 }

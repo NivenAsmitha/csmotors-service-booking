@@ -112,7 +112,12 @@ export function AssignmentBoardPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         {boardQuery.data?.map((booking) => (
           <article
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            className={[
+              'rounded-2xl border p-5 shadow-sm',
+              booking.assignment
+                ? 'border-slate-200 bg-white'
+                : 'border-amber-300 bg-amber-50/60 ring-1 ring-amber-100',
+            ].join(' ')}
             key={booking.booking_id}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -128,9 +133,9 @@ export function AssignmentBoardPage() {
               <p><span className="font-semibold text-slate-800">Service:</span> {booking.service_name}</p>
               <p><span className="font-semibold text-slate-800">Slot:</span> {booking.slot_label}</p>
               <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.date)}</p>
-              <p><span className="font-semibold text-slate-800">Exact time:</span> {booking.start_time} - {booking.end_time}</p>
-              <p><span className="font-semibold text-slate-800">Bike Number:</span> {booking.bike_number || 'Not provided'}</p>
-              <p><span className="font-semibold text-slate-800">Bike Model:</span> {booking.bike_model || 'Not provided'}</p>
+              <p className="rounded-lg bg-slate-950 px-3 py-2 font-semibold text-white"><span className="text-slate-300">Internal time:</span> {booking.start_time} - {booking.end_time}</p>
+              <p><span className="font-semibold text-slate-800">Bike number:</span> {booking.bike_number || 'Not provided'}</p>
+              <p><span className="font-semibold text-slate-800">Bike model:</span> {booking.bike_model || 'Not provided'}</p>
             </div>
             <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
               {booking.assignment ? (
@@ -140,7 +145,7 @@ export function AssignmentBoardPage() {
                   <p className="mt-1"><span className="font-semibold text-slate-800">Scheduled:</span> {booking.assignment.scheduled_time || 'Not set'}</p>
                 </>
               ) : (
-                <p>Not assigned yet.</p>
+                <p className="font-semibold text-amber-800">Unassigned booking. Assign an employee to schedule workshop work.</p>
               )}
             </div>
             <Button

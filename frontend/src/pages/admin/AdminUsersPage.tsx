@@ -246,7 +246,7 @@ export function AdminUsersPage() {
           </div>
           {users.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-slate-500">
-              No users match the selected filters.
+              No users found.
             </p>
           ) : null}
         </section>
@@ -346,21 +346,24 @@ function CreateUserModal({
           }),
         )}
       >
-        <Input error={errors.name?.message} label="Name" {...register('name')} />
+        <Input error={errors.name?.message} label="Name" placeholder="Full name" {...register('name')} />
         <Input
           error={errors.email?.message}
           label="Email"
+          placeholder="name@example.com"
           type="email"
           {...register('email')}
         />
         <Input
           error={errors.phone?.message}
           label="Phone (optional)"
+          placeholder="+94 77 123 4567"
           {...register('phone')}
         />
         <Input
           error={errors.password?.message}
           label="Temporary password"
+          placeholder="At least 6 characters"
           type="password"
           {...register('password')}
         />
@@ -455,10 +458,11 @@ function EditUserModal({
         </p>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
-        <Input error={errors.name?.message} label="Name" {...register('name')} />
+        <Input error={errors.name?.message} label="Name" placeholder="Full name" {...register('name')} />
         <Input
           error={errors.phone?.message}
           label="Phone (optional)"
+          placeholder="+94 77 123 4567"
           {...register('phone')}
         />
         <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-3">

@@ -236,7 +236,7 @@ function AuditLogModal({
   open,
 }: AuditLogModalProps) {
   return (
-    <Modal isOpen={open} onClose={onClose} title="Audit log details">
+    <Modal isOpen={open} onClose={onClose} title="Audit log details" width="lg">
       {isLoading ? <p className="text-sm text-slate-500">Loading details...</p> : null}
       {isError ? <ErrorText error={error} fallback="Unable to load audit log" /> : null}
       {log ? (
@@ -251,8 +251,10 @@ function AuditLogModal({
                 : 'System'
             }
           />
-          <Detail label="Action" value={log.action} />
-          <Detail label="Entity" value={log.entity} />
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="info">{log.action}</Badge>
+            <Badge>{log.entity}</Badge>
+          </div>
           <Detail label="Entity ID" value={log.entity_id ?? 'None'} />
           <div>
             <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">

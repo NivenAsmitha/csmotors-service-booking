@@ -251,7 +251,7 @@ export function AdminBookingsPage() {
           </div>
           {bookings.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-slate-500">
-              No bookings match the selected filters.
+              No bookings found.
             </p>
           ) : null}
         </section>

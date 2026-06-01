@@ -3,6 +3,7 @@ import { CalendarDays, Clock3, LockKeyhole, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Select } from '../../components/ui/Select'
 import {
   createDayClosure,
@@ -32,6 +33,7 @@ export function AdminSlotsPage() {
   const [closureDate, setClosureDate] = useState('')
   const [closureReason, setClosureReason] = useState('')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const configQuery = useQuery({
     queryKey: ['slots-config'],
     queryFn: getSlotsConfig,
@@ -122,10 +124,29 @@ export function AdminSlotsPage() {
       return
     }
 
-    createClosureMutation.mutate({
-      date: closureDate,
-      ...(closureReason.trim() ? { reason: closureReason.trim() } : {}),
-    })
+    setConfirmation({ kind: 'close-day' })
+  }
+
+  function confirmAction() {
+    if (!confirmation) {
+      return
+    }
+
+    if (confirmation.kind === 'slot') {
+      closedMutation.mutate({
+        id: confirmation.slot.day_slot_id,
+        isClosed: !confirmation.slot.is_closed,
+      })
+    } else if (confirmation.kind === 'close-day') {
+      createClosureMutation.mutate({
+        date: closureDate,
+        ...(closureReason.trim() ? { reason: closureReason.trim() } : {}),
+      })
+    } else {
+      deleteClosureMutation.mutate(confirmation.date)
+    }
+
+    setConfirmation(null)
   }
 
   return (
@@ -161,8 +182,8 @@ export function AdminSlotsPage() {
       ) : null}
 
       <PageSection
-        description="When enabled, customers see exact booking times. When disabled, customers see only slot labels."
-        title="Client Time Display"
+        description="When disabled, customers see only slot labels. Staff still see exact time."
+        title="Global Time Display"
       >
         {globalTimeModeQuery.isPending ? (
           <LoadingText text="Loading global time display status..." />
@@ -174,7 +195,7 @@ export function AdminSlotsPage() {
           />
         ) : null}
         {globalTimeModeQuery.data ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-brand-200 bg-brand-50 p-4">
             <div>
               <Badge
                 variant={globalTimeModeQuery.data.show_time ? 'success' : 'warning'}
@@ -194,7 +215,7 @@ export function AdminSlotsPage() {
                   !globalTimeModeQuery.data.show_time,
                 )
               }
-              variant="secondary"
+              variant={globalTimeModeQuery.data.show_time ? 'secondary' : 'primary'}
             >
               {globalTimeModeQuery.data.show_time
                 ? 'Deactivate Time Showing'
@@ -289,7 +310,7 @@ export function AdminSlotsPage() {
                 <div className="mt-4 flex justify-end">
                   <Button
                     disabled={isReadOnly || closedMutation.isPending}
-                    onClick={() => closedMutation.mutate({ id: slot.day_slot_id, isClosed: !slot.is_closed })}
+                    onClick={() => setConfirmation({ kind: 'slot', slot })}
                     variant={slot.is_closed ? 'secondary' : 'danger'}
                   >
                     {slot.is_closed ? 'Open Slot' : 'Close Slot'}
@@ -343,7 +364,7 @@ export function AdminSlotsPage() {
                 </div>
                 <Button
                   disabled={isReadOnly || deleteClosureMutation.isPending}
-                  onClick={() => deleteClosureMutation.mutate(closureDateKey)}
+                  onClick={() => setConfirmation({ kind: 'reopen-day', date: closureDateKey })}
                   variant="secondary"
                 >
                   <RotateCcw aria-hidden="true" className="size-4" />
@@ -355,6 +376,19 @@ export function AdminSlotsPage() {
           {closuresQuery.data?.length === 0 ? <LoadingText text="No day closures configured." /> : null}
         </div>
       </PageSection>
+      <ConfirmDialog
+        confirmLabel={getConfirmationCopy(confirmation).confirmLabel}
+        description={getConfirmationCopy(confirmation).description}
+        isConfirming={
+          closedMutation.isPending ||
+          createClosureMutation.isPending ||
+          deleteClosureMutation.isPending
+        }
+        isOpen={Boolean(confirmation)}
+        onClose={() => setConfirmation(null)}
+        onConfirm={confirmAction}
+        title={getConfirmationCopy(confirmation).title}
+      />
     </div>
   )
 }
@@ -399,7 +433,11 @@ function DateInput({ label, onChange, value }: DateInputProps) {
 }
 
 function AvailabilityBadge({ slot }: { slot: Slot }) {
-  if (slot.reason === 'day_closed' || slot.is_closed) {
+  if (slot.reason === 'day_closed') {
+    return <Badge variant="danger">Day Closed</Badge>
+  }
+
+  if (slot.is_closed) {
     return <Badge variant="danger">Closed</Badge>
   }
 
@@ -408,6 +446,40 @@ function AvailabilityBadge({ slot }: { slot: Slot }) {
   }
 
   return <Badge variant="success">Available</Badge>
+}
+
+type Confirmation =
+  | { kind: 'slot'; slot: Slot }
+  | { kind: 'close-day' }
+  | { kind: 'reopen-day'; date: string }
+
+function getConfirmationCopy(confirmation: Confirmation | null) {
+  if (confirmation?.kind === 'slot') {
+    const action = confirmation.slot.is_closed ? 'open' : 'close'
+    return {
+      confirmLabel: `${action === 'open' ? 'Open' : 'Close'} slot`,
+      description: `${action === 'open' ? 'Open' : 'Close'} ${confirmation.slot.label} for ${formatDate(confirmation.slot.date)}? This changes customer availability immediately.`,
+      title: `${action === 'open' ? 'Open' : 'Close'} slot`,
+    }
+  }
+
+  if (confirmation?.kind === 'reopen-day') {
+    return {
+      confirmLabel: 'Reopen day',
+      description: `Reopen ${formatDate(confirmation.date)}? Customers will be able to book available slots again.`,
+      title: 'Reopen day',
+    }
+  }
+
+  return {
+    confirmLabel: 'Close entire day',
+    description: closureDescription(),
+    title: 'Close entire day',
+  }
+}
+
+function closureDescription() {
+  return 'Close the selected day? This disables every service slot on that date and prevents customer bookings.'
 }
 
 function LoadingText({ text }: { text: string }) {

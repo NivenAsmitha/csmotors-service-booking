@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { MessageSquareText, Search, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { RatingStars } from '../../components/ui/RatingStars'
 import { Select } from '../../components/ui/Select'
@@ -43,6 +43,10 @@ export function AdminReviewsPage() {
       )
     })
   }, [employeeId, rating, reviewsQuery.data, search])
+  const allReviews = reviewsQuery.data ?? []
+  const averageRating = allReviews.length
+    ? allReviews.reduce((total, review) => total + review.rating, 0) / allReviews.length
+    : null
 
   return (
     <div className="space-y-6">
@@ -50,6 +54,18 @@ export function AdminReviewsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Administration</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Customer Reviews</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">Review customer feedback across completed services.</p>
+      </section>
+      <section className="grid gap-3 sm:grid-cols-2">
+        <SummaryCard
+          icon={<Star aria-hidden="true" className="size-5" />}
+          label="Average rating"
+          value={averageRating === null ? 'No ratings' : averageRating.toFixed(2)}
+        />
+        <SummaryCard
+          icon={<MessageSquareText aria-hidden="true" className="size-5" />}
+          label="Total reviews"
+          value={allReviews.length}
+        />
       </section>
       <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
         <label className="block">
@@ -81,9 +97,13 @@ export function AdminReviewsPage() {
           </article>
         ))}
       </div>
-      {reviewsQuery.data && reviews.length === 0 ? <EmptyText text="No reviews match the selected filters." /> : null}
+      {reviewsQuery.data && reviews.length === 0 ? <EmptyText text="No reviews yet." /> : null}
     </div>
   )
+}
+
+function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="text-brand-700">{icon}</span><p className="mt-4 text-3xl font-bold text-slate-950">{value}</p><p className="mt-1 text-sm font-medium text-slate-500">{label}</p></article>
 }
 
 function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
