@@ -83,7 +83,7 @@ export function EmployeeDashboardPage() {
           const booking = assignment.booking
           const slot = booking.daySlot.slot
           return (
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" key={assignment.id}>
+            <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" key={assignment.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-bold text-slate-900">{slot.service.name}</h2>
@@ -91,7 +91,7 @@ export function EmployeeDashboardPage() {
                 </div>
                 <BookingStatusBadge status={booking.status} />
               </div>
-              <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+              <div className="mt-4 grid min-w-0 gap-2 break-words text-sm text-slate-600 sm:grid-cols-2">
                 <p><span className="font-semibold text-slate-800">Client:</span> {booking.client.name}</p>
                 <p><span className="font-semibold text-slate-800">Contact:</span> {booking.client.phone || booking.client.email}</p>
                 <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.daySlot.date)}</p>

@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Eye, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { Alert } from '../../components/ui/Alert'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import {
@@ -68,12 +72,12 @@ export function AuditLogsPage() {
         </p>
       </section>
 
-      <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
+      <Alert className="font-semibold" variant="info">
         Developer read-only. Sensitive metadata is removed by the backend before
         audit records are stored.
-      </p>
+      </Alert>
 
-      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-3">
+      <Card className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" padding="sm">
         <TextFilter
           label="Entity"
           onChange={(value) => updateFilter(() => setEntity(value))}
@@ -110,10 +114,10 @@ export function AuditLogsPage() {
           options={limitOptions}
           value={String(limit)}
         />
-      </section>
+      </Card>
 
       {logsQuery.isPending ? (
-        <p className="text-sm text-slate-500">Loading audit logs...</p>
+        <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner /> Loading audit logs...</p>
       ) : null}
       {logsQuery.isError ? (
         <ErrorText error={logsQuery.error} fallback="Unable to load audit logs" />
@@ -121,7 +125,7 @@ export function AuditLogsPage() {
       {response ? (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <table className="min-w-[980px] divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Created</th>
@@ -175,18 +179,16 @@ export function AuditLogsPage() {
             </table>
           </div>
           {response.data.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">
-              No audit logs match the selected filters.
-            </p>
+            <div className="p-4"><EmptyState title="No audit logs match the selected filters." /></div>
           ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3">
             <p className="text-xs text-slate-500">
               Page {response.page} of {Math.max(response.total_pages, 1)} |{' '}
               {response.total} total logs
             </p>
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2 sm:w-auto">
               <Button
-                className="px-3 py-2"
+                className="flex-1 px-3 py-2 sm:flex-none"
                 disabled={response.page <= 1}
                 onClick={() => setPage((currentPage) => currentPage - 1)}
                 variant="secondary"
@@ -194,7 +196,7 @@ export function AuditLogsPage() {
                 Previous
               </Button>
               <Button
-                className="px-3 py-2"
+                className="flex-1 px-3 py-2 sm:flex-none"
                 disabled={response.page >= response.total_pages}
                 onClick={() => setPage((currentPage) => currentPage + 1)}
                 variant="secondary"
@@ -237,7 +239,7 @@ function AuditLogModal({
 }: AuditLogModalProps) {
   return (
     <Modal isOpen={open} onClose={onClose} title="Audit log details" width="lg">
-      {isLoading ? <p className="text-sm text-slate-500">Loading details...</p> : null}
+      {isLoading ? <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner /> Loading details...</p> : null}
       {isError ? <ErrorText error={error} fallback="Unable to load audit log" /> : null}
       {log ? (
         <dl className="space-y-4 text-sm">
@@ -337,9 +339,9 @@ function DateFilter({
 
 function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
   return (
-    <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <Alert variant="error">
       {getApiErrorMessage(error, fallback)}
-    </p>
+    </Alert>
   )
 }
 

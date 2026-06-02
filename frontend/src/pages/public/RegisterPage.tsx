@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
 import { AuthCard } from '../../features/auth/AuthCard'
 import { FormField } from '../../features/auth/FormField'
 import { SubmitButton } from '../../features/auth/SubmitButton'
@@ -62,9 +63,9 @@ export function RegisterPage() {
       title="Create an account"
     >
       {submitError ? (
-        <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <Alert className="mb-5" variant="error">
           {submitError}
-        </p>
+        </Alert>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <FormField

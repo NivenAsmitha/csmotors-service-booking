@@ -65,7 +65,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         />
       ) : null}
       <aside className={[
-        'fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-800 bg-slate-950 text-slate-100 shadow-xl transition-transform lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:shadow-none',
+        'fixed inset-y-0 left-0 z-40 flex w-[min(18rem,calc(100vw-3rem))] flex-col border-r border-slate-800 bg-slate-950 text-slate-100 shadow-xl transition-transform lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:shadow-none',
         isOpen ? 'translate-x-0' : '-translate-x-full',
       ].join(' ')}>
         <div className="flex items-start justify-between px-5 py-5">

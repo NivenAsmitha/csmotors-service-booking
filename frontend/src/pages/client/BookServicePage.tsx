@@ -3,6 +3,13 @@ import { CalendarDays, CheckCircle2, Clock3 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '../../components/ui/Badge'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { Input } from '../../components/ui/Input'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { Textarea } from '../../components/ui/Textarea'
 import { createBooking } from '../../features/bookings/bookings.api'
 import {
   getServices,
@@ -96,15 +103,15 @@ export function BookServicePage() {
         </p>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <Card padding="lg">
         <h2 className="text-lg font-bold text-slate-900">1. Choose a service</h2>
         {servicesQuery.isPending ? (
-          <p className="mt-4 text-sm text-slate-500">Loading services...</p>
+          <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner /> Loading services...</p>
         ) : null}
         {servicesQuery.isError ? (
-          <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Alert className="mt-4" variant="error">
             {getApiErrorMessage(servicesQuery.error, 'Unable to load services')}
-          </p>
+          </Alert>
         ) : null}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {servicesQuery.data?.map((service) => (
@@ -133,9 +140,9 @@ export function BookServicePage() {
             Select an available service slot.
           </p>
         ) : null}
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <Card padding="lg">
         <h2 className="text-lg font-bold text-slate-900">2. Select a date</h2>
         <label className="mt-4 block max-w-sm">
           <span className="text-sm font-semibold text-slate-700">
@@ -155,9 +162,9 @@ export function BookServicePage() {
             />
           </span>
         </label>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <Card padding="lg">
         <h2 className="text-lg font-bold text-slate-900">3. Pick a slot</h2>
         {!serviceId || !date ? (
           <p className="mt-4 text-sm text-slate-500">
@@ -165,17 +172,15 @@ export function BookServicePage() {
           </p>
         ) : null}
         {slotsQuery.isPending && serviceId && date ? (
-          <p className="mt-4 text-sm text-slate-500">Loading slots...</p>
+          <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner /> Loading slots...</p>
         ) : null}
         {slotsQuery.isError ? (
-          <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Alert className="mt-4" variant="error">
             {getApiErrorMessage(slotsQuery.error, 'Unable to load slots')}
-          </p>
+          </Alert>
         ) : null}
         {slotsQuery.data?.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">
-            No slots are configured for this service.
-          </p>
+          <div className="mt-4"><EmptyState title="No slots are configured for this service." /></div>
         ) : null}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {slotsQuery.data?.map((slot) => (
@@ -193,7 +198,7 @@ export function BookServicePage() {
               onClick={() => setSelectedDaySlotId(slot.day_slot_id)}
               type="button"
             >
-              <span className="flex items-start justify-between gap-3">
+              <span className="flex flex-wrap items-start justify-between gap-3">
                 <span className="font-semibold">{slot.label}</span>
                 <SlotAvailabilityBadge slot={slot} />
               </span>
@@ -211,76 +216,54 @@ export function BookServicePage() {
             </button>
           ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <Card padding="lg">
         <h2 className="text-lg font-bold text-slate-900">
           4. Add bike details
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">
-              Bike Number
-            </span>
-            <input
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+          <Input
+              error={formError && !bikeNumber.trim() ? 'Bike number is required.' : undefined}
+              label="Bike Number"
               maxLength={30}
               onChange={(event) => setBikeNumber(event.target.value)}
               placeholder="WP ABC-1234"
               required
               value={bikeNumber}
-            />
-            {formError && !bikeNumber.trim() ? (
-              <span className="mt-1.5 block text-xs text-red-600">
-                Bike number is required.
-              </span>
-            ) : null}
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">
-              Bike Model
-            </span>
-            <input
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+          />
+          <Input
+              error={formError && !bikeModel.trim() ? 'Bike model is required.' : undefined}
+              label="Bike Model"
               maxLength={80}
               onChange={(event) => setBikeModel(event.target.value)}
               placeholder="Pulsar N160, CT100, Honda Dio"
               required
               value={bikeModel}
-            />
-            {formError && !bikeModel.trim() ? (
-              <span className="mt-1.5 block text-xs text-red-600">
-                Bike model is required.
-              </span>
-            ) : null}
-          </label>
+          />
         </div>
-        <label className="mt-4 block">
-          <span className="text-sm font-semibold text-slate-700">
-            Notes (optional)
-          </span>
-        <textarea
-          className="mt-2 min-h-28 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+        <Textarea
+          label="Notes (optional)"
           onChange={(event) => setNotes(event.target.value)}
           placeholder="Optional details about your bike or service request"
           value={notes}
+          wrapperClassName="mt-4"
         />
-        </label>
         {formError ? (
-          <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Alert className="mt-4" variant="error">
             {formError}
-          </p>
+          </Alert>
         ) : null}
         {bookingMutation.isError ? (
-          <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+          <Alert className="mt-4" variant="error">
             {getApiErrorMessage(
               bookingMutation.error,
               'Unable to create booking',
             )}
-          </p>
+          </Alert>
         ) : null}
-        <button
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+        <Button
+          className="mt-4 w-full sm:w-auto"
           disabled={
             !selectedDaySlotId ||
             !bikeNumber.trim() ||
@@ -288,12 +271,14 @@ export function BookServicePage() {
             bookingMutation.isPending
           }
           onClick={submitBooking}
-          type="button"
+          loading={bookingMutation.isPending}
+          loadingText="Confirming..."
+          size="lg"
         >
           <CheckCircle2 aria-hidden="true" className="size-4" />
-          {bookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
-        </button>
-      </section>
+          Confirm Booking
+        </Button>
+      </Card>
     </div>
   )
 }

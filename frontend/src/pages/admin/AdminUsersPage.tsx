@@ -112,7 +112,7 @@ export function AdminUsersPage() {
           </p>
         </div>
         {!isReadOnly ? (
-          <Button onClick={() => setIsCreateOpen(true)}>
+          <Button className="w-full sm:w-auto" onClick={() => setIsCreateOpen(true)}>
             <Plus aria-hidden="true" className="size-4" />
             Create User
           </Button>
@@ -176,7 +176,7 @@ export function AdminUsersPage() {
       {usersQuery.data ? (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <table className="min-w-[920px] divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Name</th>
@@ -373,11 +373,11 @@ function CreateUserModal({
           options={options}
           {...register('role')}
         />
-        <div className="flex justify-end gap-3 pt-2">
-          <Button disabled={mutation.isPending} onClick={close} variant="secondary">
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} onClick={close} variant="secondary">
             Cancel
           </Button>
-          <Button disabled={mutation.isPending} type="submit">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} type="submit">
             {mutation.isPending ? 'Creating...' : 'Create user'}
           </Button>
         </div>
@@ -477,11 +477,11 @@ function EditUserModal({
             {...register('role')}
           />
         ) : null}
-        <div className="flex justify-end gap-3 pt-2">
-          <Button disabled={mutation.isPending} onClick={close} variant="secondary">
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} onClick={close} variant="secondary">
             Cancel
           </Button>
-          <Button disabled={mutation.isPending} type="submit">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} type="submit">
             {mutation.isPending ? 'Saving...' : 'Save changes'}
           </Button>
         </div>

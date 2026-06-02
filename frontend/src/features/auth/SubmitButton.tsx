@@ -10,12 +10,15 @@ export function SubmitButton({
   loadingText,
 }: SubmitButtonProps) {
   return (
-    <button
-      className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-      disabled={isSubmitting}
+    <Button
+      className="w-full"
+      loading={isSubmitting}
+      loadingText={loadingText}
+      size="lg"
       type="submit"
     >
-      {isSubmitting ? loadingText : children}
-    </button>
+      {children}
+    </Button>
   )
 }
+import { Button } from '../../components/ui/Button'

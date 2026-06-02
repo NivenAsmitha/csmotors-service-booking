@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
 import { AuthCard } from '../../features/auth/AuthCard'
 import { FormField } from '../../features/auth/FormField'
 import { SubmitButton } from '../../features/auth/SubmitButton'
@@ -58,12 +59,12 @@ export function LoginPage() {
       title="Welcome back"
     >
       {successMessage ? (
-        <p className="mb-5 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
+        <Alert className="mb-5" variant="success">
           {successMessage}
-        </p>
+        </Alert>
       ) : null}
       {submitError ? (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <Alert className="mb-5" variant="error">
           <p>{submitError}</p>
           {submitError.toLowerCase().includes('verify your email') ? (
             <Link
@@ -73,7 +74,7 @@ export function LoginPage() {
               Verify your email
             </Link>
           ) : null}
-        </div>
+        </Alert>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <FormField

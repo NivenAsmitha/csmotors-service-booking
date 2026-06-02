@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
 import { AuthCard } from '../../features/auth/AuthCard'
 import { FormField } from '../../features/auth/FormField'
 import { SubmitButton } from '../../features/auth/SubmitButton'
@@ -65,14 +66,14 @@ export function ResetPasswordPage() {
       title="Reset password"
     >
       {successMessage ? (
-        <p className="mb-5 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
+        <Alert className="mb-5" variant="success">
           {successMessage}
-        </p>
+        </Alert>
       ) : null}
       {submitError ? (
-        <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <Alert className="mb-5" variant="error">
           {submitError}
-        </p>
+        </Alert>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <FormField error={errors.email?.message} label="Email address" type="email" {...register('email')} />

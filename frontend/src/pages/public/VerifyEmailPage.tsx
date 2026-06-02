@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
 import { AuthCard } from '../../features/auth/AuthCard'
 import { FormField } from '../../features/auth/FormField'
 import { SubmitButton } from '../../features/auth/SubmitButton'
@@ -82,14 +84,14 @@ export function VerifyEmailPage() {
       title="Verify your email"
     >
       {statusMessage ? (
-        <p className="mb-5 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
+        <Alert className="mb-5" variant="success">
           {statusMessage}
-        </p>
+        </Alert>
       ) : null}
       {submitError ? (
-        <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <Alert className="mb-5" variant="error">
           {submitError}
-        </p>
+        </Alert>
       ) : null}
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <FormField
@@ -112,14 +114,15 @@ export function VerifyEmailPage() {
           Verify Email
         </SubmitButton>
       </form>
-      <button
-        className="mt-4 w-full text-sm font-semibold text-brand-700 hover:text-brand-900 disabled:opacity-60"
-        disabled={isResending}
+      <Button
+        className="mt-4 w-full text-brand-700 hover:text-brand-900"
+        loading={isResending}
+        loadingText="Sending..."
         onClick={resend}
-        type="button"
+        variant="ghost"
       >
-        {isResending ? 'Sending...' : 'Resend Code'}
-      </button>
+        Resend Code
+      </Button>
       <p className="mt-6 text-center text-sm text-slate-600">
         Already verified?{' '}
         <Link className="font-semibold text-brand-700 hover:text-brand-900" to="/login">

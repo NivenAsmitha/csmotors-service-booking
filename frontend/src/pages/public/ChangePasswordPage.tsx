@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
 import { AuthCard } from '../../features/auth/AuthCard'
 import { FormField } from '../../features/auth/FormField'
 import { SubmitButton } from '../../features/auth/SubmitButton'
@@ -71,9 +73,9 @@ export function ChangePasswordPage() {
         title="Change password"
       >
         {submitError ? (
-          <p className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <Alert className="mb-5" variant="error">
             {submitError}
-          </p>
+          </Alert>
         ) : null}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <FormField
@@ -109,13 +111,13 @@ export function ChangePasswordPage() {
             </SubmitButton>
           </div>
         </form>
-        <button
-          className="mt-5 w-full text-sm font-semibold text-slate-500 transition hover:text-slate-800"
+        <Button
+          className="mt-5 w-full"
           onClick={handleLogout}
-          type="button"
+          variant="ghost"
         >
           Log out
-        </button>
+        </Button>
       </AuthCard>
     </div>
   )

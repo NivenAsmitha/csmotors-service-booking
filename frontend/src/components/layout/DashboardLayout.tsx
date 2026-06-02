@@ -9,7 +9,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-x-hidden">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
         <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
           <Outlet />

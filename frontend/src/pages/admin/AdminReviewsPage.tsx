@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { MessageSquareText, Search, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { Alert } from '../../components/ui/Alert'
+import { Card } from '../../components/ui/Card'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { RatingStars } from '../../components/ui/RatingStars'
 import { Select } from '../../components/ui/Select'
 import { getAllReviews } from '../../features/reviews/reviews.api'
@@ -67,7 +71,7 @@ export function AdminReviewsPage() {
           value={allReviews.length}
         />
       </section>
-      <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
+      <Card className="grid gap-3 md:grid-cols-3" padding="sm">
         <label className="block">
           <span className="text-sm font-semibold text-slate-700">Search</span>
           <span className="relative mt-2 block">
@@ -77,12 +81,12 @@ export function AdminReviewsPage() {
         </label>
         <Select label="Rating" onChange={(event) => setRating(event.target.value)} options={[{ label: 'All ratings', value: '' }, ...[5, 4, 3, 2, 1].map((value) => ({ label: `${value} stars`, value: String(value) }))]} value={rating} />
         <Select label="Employee" onChange={(event) => setEmployeeId(event.target.value)} options={[{ label: 'All employees', value: '' }, ...employees.map((employee) => ({ label: employee.name, value: employee.id }))]} value={employeeId} />
-      </section>
-      {reviewsQuery.isPending ? <p className="text-sm text-slate-500">Loading reviews...</p> : null}
+      </Card>
+      {reviewsQuery.isPending ? <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner /> Loading reviews...</p> : null}
       {reviewsQuery.isError ? <ErrorText error={reviewsQuery.error} fallback="Unable to load reviews" /> : null}
       <div className="grid gap-4 xl:grid-cols-2">
         {reviews.map((review) => (
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" key={review.id}>
+          <Card as="article" key={review.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <RatingStars rating={review.rating} showValue />
               <span className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString()}</span>
@@ -94,22 +98,18 @@ export function AdminReviewsPage() {
               <p><span className="font-semibold text-slate-700">Service:</span> {review.booking?.service.name || 'Unknown'}</p>
               <p><span className="font-semibold text-slate-700">Booking date:</span> {review.booking?.date ? formatDate(review.booking.date) : 'Unknown'}</p>
             </div>
-          </article>
+          </Card>
         ))}
       </div>
-      {reviewsQuery.data && reviews.length === 0 ? <EmptyText text="No reviews yet." /> : null}
+      {reviewsQuery.data && reviews.length === 0 ? <EmptyState title="No reviews yet." /> : null}
     </div>
   )
 }
 
 function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
-  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="text-brand-700">{icon}</span><p className="mt-4 text-3xl font-bold text-slate-950">{value}</p><p className="mt-1 text-sm font-medium text-slate-500">{label}</p></article>
+  return <Card as="article"><span className="text-brand-700">{icon}</span><p className="mt-4 text-3xl font-bold text-slate-950">{value}</p><p className="mt-1 text-sm font-medium text-slate-500">{label}</p></Card>
 }
 
 function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
-  return <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{getApiErrorMessage(error, fallback)}</p>
-}
-
-function EmptyText({ text }: { text: string }) {
-  return <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">{text}</p>
+  return <Alert variant="error">{getApiErrorMessage(error, fallback)}</Alert>
 }

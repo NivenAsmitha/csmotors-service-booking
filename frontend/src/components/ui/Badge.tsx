@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
 
 type BadgeVariant =
   | 'neutral'
@@ -11,7 +11,7 @@ type BadgeVariant =
 type BadgeProps = {
   children: ReactNode
   variant?: BadgeVariant
-}
+} & HTMLAttributes<HTMLSpanElement>
 
 const variantStyles: Record<BadgeVariant, string> = {
   neutral: 'bg-slate-100 text-slate-700',
@@ -22,13 +22,15 @@ const variantStyles: Record<BadgeVariant, string> = {
   purple: 'bg-violet-100 text-violet-800',
 }
 
-export function Badge({ children, variant = 'neutral' }: BadgeProps) {
+export function Badge({ children, className = '', variant = 'neutral', ...badgeProps }: BadgeProps) {
   return (
     <span
       className={[
         'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
         variantStyles[variant],
+        className,
       ].join(' ')}
+      {...badgeProps}
     >
       {children}
     </span>

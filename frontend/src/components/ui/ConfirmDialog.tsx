@@ -23,12 +23,12 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <p className="text-sm leading-6 text-slate-600">{description}</p>
-      <div className="mt-6 flex justify-end gap-3">
-        <Button disabled={isConfirming} onClick={onClose} variant="secondary">
+      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Button className="w-full sm:w-auto" disabled={isConfirming} onClick={onClose} variant="secondary">
           Cancel
         </Button>
-        <Button disabled={isConfirming} onClick={onConfirm} variant="danger">
-          {isConfirming ? 'Working...' : confirmLabel}
+        <Button className="w-full sm:w-auto" loading={isConfirming} loadingText="Working..." onClick={onConfirm} variant="danger">
+          {confirmLabel}
         </Button>
       </div>
     </Modal>

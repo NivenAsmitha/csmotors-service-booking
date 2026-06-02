@@ -2,9 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Clock3, LockKeyhole, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
+import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { Select } from '../../components/ui/Select'
+import { Textarea } from '../../components/ui/Textarea'
 import {
   createDayClosure,
   deleteDayClosure,
@@ -165,20 +170,20 @@ export function AdminSlotsPage() {
       </section>
 
       {isReadOnly ? (
-        <p className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
+        <Alert className="font-semibold" variant="info">
           <LockKeyhole aria-hidden="true" className="size-4" />
           Developer read-only
-        </p>
+        </Alert>
       ) : null}
       {successMessage ? (
-        <p className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-900">
+        <Alert variant="success">
           {successMessage}
-        </p>
+        </Alert>
       ) : null}
       {mutationError ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Alert variant="error">
           {getApiErrorMessage(mutationError, 'Unable to update slot settings')}
-        </p>
+        </Alert>
       ) : null}
 
       <PageSection
@@ -209,6 +214,7 @@ export function AdminSlotsPage() {
               </p>
             </div>
             <Button
+              className="w-full sm:w-auto"
               disabled={isReadOnly || globalTimeModeMutation.isPending}
               onClick={() =>
                 globalTimeModeMutation.mutate(
@@ -241,7 +247,7 @@ export function AdminSlotsPage() {
                 </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <table className="min-w-[360px] divide-y divide-slate-200 text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Label</th>
@@ -279,7 +285,7 @@ export function AdminSlotsPage() {
           />
           <DateInput label="Date" onChange={selectDate} value={date} />
         </div>
-        {!serviceId || !date ? <LoadingText text="Select a service and date to view day slots." /> : null}
+        {!serviceId || !date ? <LoadingText loading={false} text="Select a service and date to view day slots." /> : null}
         {datedSlotsQuery.isPending && serviceId && date ? <LoadingText text="Loading date slots..." /> : null}
         {datedSlotsQuery.isError ? <ErrorText error={datedSlotsQuery.error} fallback="Unable to load date slots" /> : null}
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -309,6 +315,7 @@ export function AdminSlotsPage() {
                 </p>
                 <div className="mt-4 flex justify-end">
                   <Button
+                    className="w-full sm:w-auto"
                     disabled={isReadOnly || closedMutation.isPending}
                     onClick={() => setConfirmation({ kind: 'slot', slot })}
                     variant={slot.is_closed ? 'secondary' : 'danger'}
@@ -328,18 +335,17 @@ export function AdminSlotsPage() {
       >
         <div className="grid gap-3 lg:grid-cols-[220px_1fr_auto] lg:items-end">
           <DateInput label="Closure date" onChange={setClosureDate} value={closureDate} />
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Reason (optional)</span>
-            <textarea
-              className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
+          <Textarea
+              className="min-h-12"
               disabled={isReadOnly}
+              label="Reason (optional)"
               maxLength={500}
               onChange={(event) => setClosureReason(event.target.value)}
               placeholder="Shop closed for maintenance"
               value={closureReason}
-            />
-          </label>
+          />
           <Button
+            className="w-full lg:w-auto"
             disabled={isReadOnly || !closureDate || createClosureMutation.isPending}
             onClick={submitClosure}
             variant="danger"
@@ -363,6 +369,7 @@ export function AdminSlotsPage() {
                   <p className="mt-1 text-sm text-slate-500">{closure.reason || 'No reason provided'}</p>
                 </div>
                 <Button
+                  className="w-full sm:w-auto"
                   disabled={isReadOnly || deleteClosureMutation.isPending}
                   onClick={() => setConfirmation({ kind: 'reopen-day', date: closureDateKey })}
                   variant="secondary"
@@ -373,7 +380,7 @@ export function AdminSlotsPage() {
               </article>
             )
           })}
-          {closuresQuery.data?.length === 0 ? <LoadingText text="No day closures configured." /> : null}
+          {closuresQuery.data?.length === 0 ? <EmptyState title="No day closures configured." /> : null}
         </div>
       </PageSection>
       <ConfirmDialog
@@ -401,11 +408,11 @@ type PageSectionProps = {
 
 function PageSection({ children, description, title }: PageSectionProps) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <Card padding="lg">
       <h2 className="text-xl font-bold text-slate-950">{title}</h2>
       <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
       <div className="mt-5">{children}</div>
-    </section>
+    </Card>
   )
 }
 
@@ -482,15 +489,15 @@ function closureDescription() {
   return 'Close the selected day? This disables every service slot on that date and prevents customer bookings.'
 }
 
-function LoadingText({ text }: { text: string }) {
-  return <p className="mt-4 text-sm text-slate-500">{text}</p>
+function LoadingText({ loading = true, text }: { loading?: boolean; text: string }) {
+  return <p className="mt-4 flex items-center gap-2 text-sm text-slate-500">{loading ? <LoadingSpinner /> : null} {text}</p>
 }
 
 function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
   return (
-    <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <Alert className="mt-4" variant="error">
       {getApiErrorMessage(error, fallback)}
-    </p>
+    </Alert>
   )
 }
 

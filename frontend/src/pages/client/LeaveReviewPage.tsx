@@ -3,7 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { Textarea } from '../../components/ui/Textarea'
 import { createReview } from '../../features/reviews/reviews.api'
 import { getApiErrorMessage } from '../../utils/api-error'
 
@@ -49,7 +52,7 @@ export function LeaveReviewPage() {
   })
 
   return (
-    <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <Card className="mx-auto max-w-xl" padding="lg">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
         Client feedback
       </p>
@@ -60,14 +63,14 @@ export function LeaveReviewPage() {
         Rate your completed service and share feedback with CS Motors.
       </p>
       {!bookingId ? (
-        <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Alert className="mt-5" variant="error">
           A booking must be selected before leaving a review.
-        </p>
+        </Alert>
       ) : null}
       {mutation.isError ? (
-        <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Alert className="mt-5" variant="error">
           {getApiErrorMessage(mutation.error, 'Unable to submit review')}
-        </p>
+        </Alert>
       ) : null}
       <form className="mt-6 space-y-4" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
         <label className="block">
@@ -84,15 +87,13 @@ export function LeaveReviewPage() {
           </select>
           {errors.rating ? <span className="mt-1.5 block text-xs text-red-600">{errors.rating.message}</span> : null}
         </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Comment (optional)</span>
-          <textarea
-            className="mt-2 min-h-32 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
-            placeholder="Tell us about your experience"
-            {...register('comment')}
-          />
-          {errors.comment ? <span className="mt-1.5 block text-xs text-red-600">{errors.comment.message}</span> : null}
-        </label>
+        <Textarea
+          className="min-h-32"
+          error={errors.comment?.message}
+          label="Comment (optional)"
+          placeholder="Tell us about your experience"
+          {...register('comment')}
+        />
         <div className="flex flex-wrap justify-end gap-3 pt-2">
           <Link
             className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -100,11 +101,11 @@ export function LeaveReviewPage() {
           >
             Cancel
           </Link>
-          <Button disabled={!bookingId || mutation.isPending} type="submit">
-            {mutation.isPending ? 'Submitting...' : 'Submit Review'}
+          <Button disabled={!bookingId} loading={mutation.isPending} loadingText="Submitting..." type="submit">
+            Submit Review
           </Button>
         </div>
       </form>
-    </section>
+    </Card>
   )
 }

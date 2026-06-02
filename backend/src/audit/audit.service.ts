@@ -119,6 +119,10 @@ const auditLogSelect = {
 } satisfies Prisma.AuditLogSelect;
 
 const sensitiveKeys = [
+  'api_key',
+  'apikey',
+  'jwt',
+  'otp',
   'password',
   'password_hash',
   'token',

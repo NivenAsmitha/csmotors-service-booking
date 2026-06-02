@@ -113,7 +113,7 @@ export function AssignmentBoardPage() {
         {boardQuery.data?.map((booking) => (
           <article
             className={[
-              'rounded-2xl border p-5 shadow-sm',
+              'min-w-0 rounded-2xl border p-5 shadow-sm',
               booking.assignment
                 ? 'border-slate-200 bg-white'
                 : 'border-amber-300 bg-amber-50/60 ring-1 ring-amber-100',
@@ -121,15 +121,15 @@ export function AssignmentBoardPage() {
             key={booking.booking_id}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="font-bold text-slate-900">{booking.client.name}</h2>
-                <p className="mt-1 text-xs text-slate-500">
+              <div className="min-w-0">
+                <h2 className="break-words font-bold text-slate-900">{booking.client.name}</h2>
+                <p className="mt-1 break-words text-xs text-slate-500">
                   {booking.client.email} | {booking.client.phone || 'No phone'}
                 </p>
               </div>
               <BookingStatusBadge status={booking.status} />
             </div>
-            <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+            <div className="mt-4 grid min-w-0 gap-2 break-words text-sm text-slate-600 sm:grid-cols-2">
               <p><span className="font-semibold text-slate-800">Service:</span> {booking.service_name}</p>
               <p><span className="font-semibold text-slate-800">Slot:</span> {booking.slot_label}</p>
               <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.date)}</p>
@@ -149,7 +149,7 @@ export function AssignmentBoardPage() {
               )}
             </div>
             <Button
-              className="mt-4"
+              className="mt-4 w-full sm:w-auto"
               disabled={
                 isReadOnly ||
                 usersQuery.isPending ||
@@ -283,11 +283,11 @@ function AssignmentModal({
           type="time"
           {...register('scheduled_time')}
         />
-        <div className="flex justify-end gap-3 pt-2">
-          <Button disabled={mutation.isPending} onClick={close} variant="secondary">
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} onClick={close} variant="secondary">
             Cancel
           </Button>
-          <Button disabled={mutation.isPending} type="submit">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} type="submit">
             <Wrench aria-hidden="true" className="size-4" />
             {mutation.isPending ? 'Saving...' : 'Save assignment'}
           </Button>
