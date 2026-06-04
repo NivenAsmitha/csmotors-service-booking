@@ -263,12 +263,15 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
+    const oldStatus = booking.status;
+    const newStatus = updateBookingStatusDto.status;
+
     const updatedBooking = await this.prisma.booking.update({
       where: {
         id: booking.id,
       },
       data: {
-        status: updateBookingStatusDto.status,
+        status: newStatus,
       },
       select: bookingSelect,
     });
@@ -280,7 +283,7 @@ export class BookingsService {
       entityId: updatedBooking.id,
       metadata: {
         old: {
-          status: booking.status,
+          status: oldStatus,
         },
         new: {
           status: updatedBooking.status,
@@ -289,7 +292,7 @@ export class BookingsService {
     });
 
     if (
-      booking.status !== BookingStatus.completed &&
+      oldStatus !== BookingStatus.completed &&
       updatedBooking.status === BookingStatus.completed
     ) {
       await this.notifyClientServiceCompleted(updatedBooking.id);
@@ -482,6 +485,7 @@ export class BookingsService {
     }
 
     try {
+      this.logger.log(`Sending completion email to ${booking.client.email}`);
       await this.emailService.sendServiceCompletedToClient(
         booking.client.email,
         {
@@ -504,8 +508,10 @@ export class BookingsService {
           recipient: booking.client.email,
         },
       });
-    } catch {
-      this.logger.error('Service completion email failed');
+    } catch (error) {
+      this.logger.error(
+        `Service completion email failed: ${formatSafeErrorForLog(error)}`,
+      );
       await this.auditService.log({
         action: 'SERVICE_COMPLETION_EMAIL_FAILED',
         entity: 'booking',
@@ -680,4 +686,71 @@ function resolveDisplayTime(
   return showTimeOverride !== null && showTimeOverride !== undefined
     ? showTimeOverride
     : defaultShowTime;
+}
+
+function formatSafeErrorForLog(error: unknown) {
+  if (error instanceof Error) {
+    return `${error.message}; ${JSON.stringify(safeErrorObject(error))}`;
+  }
+
+  return JSON.stringify(sanitizeLogValue(error));
+}
+
+function safeErrorObject(error: Error) {
+  return sanitizeLogValue({
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    cause: 'cause' in error ? error.cause : undefined,
+  });
+}
+
+function sanitizeLogValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((nestedValue) => sanitizeLogValue(nestedValue));
+  }
+
+  if (typeof value === 'object') {
+    const sanitizedObject: Record<string, unknown> = {};
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      if (!isSensitiveLogKey(key)) {
+        sanitizedObject[key] = sanitizeLogValue(nestedValue);
+      }
+    }
+
+    return sanitizedObject;
+  }
+
+  return String(value);
+}
+
+function isSensitiveLogKey(key: string) {
+  const normalizedKey = key.toLowerCase();
+  const sensitiveKeys = [
+    'api_key',
+    'apikey',
+    'authorization',
+    'jwt',
+    'otp',
+    'password',
+    'secret',
+    'token',
+  ];
+
+  return sensitiveKeys.some((sensitiveKey) =>
+    normalizedKey.includes(sensitiveKey),
+  );
 }

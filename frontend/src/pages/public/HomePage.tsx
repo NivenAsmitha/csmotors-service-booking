@@ -1,41 +1,37 @@
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '../../stores/auth.store'
 
 export function HomePage() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const bookingPath = isAuthenticated ? '/client/book-service' : '/login'
+
   return (
-    <section className="grid items-center gap-8 py-10 lg:grid-cols-[1.2fr_0.8fr] lg:py-20">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">
-          CS Motors Service Booking
+    <section className="flex min-h-[calc(100vh-11rem)] items-center py-10 sm:py-16 lg:py-20">
+      <div className="max-w-3xl">
+        <p className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+          CS Motors Bike Service
         </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-          Book bike services with clear, simple scheduling.
+        <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          Book Your Bike Service Online
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
-          The frontend foundation is ready for customer booking and internal
-          service operations.
+        <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+          Choose your service, select a convenient slot, and track your booking
+          easily with CS Motors.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700"
-            to="/register"
+            className="inline-flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-900/15 transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100"
+            to={bookingPath}
           >
-            Create account
+            Book a Service
           </Link>
           <Link
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
             to="/login"
           >
             Log in
           </Link>
         </div>
-      </div>
-      <div className="rounded-3xl bg-slate-950 p-8 text-white shadow-xl">
-        <p className="text-sm font-semibold text-brand-100">System foundation</p>
-        <p className="mt-3 text-2xl font-bold">Frontend shell configured</p>
-        <p className="mt-3 text-sm leading-6 text-slate-300">
-          Authentication, routing, layouts, API access, and role dashboards are
-          prepared for feature implementation.
-        </p>
       </div>
     </section>
   )

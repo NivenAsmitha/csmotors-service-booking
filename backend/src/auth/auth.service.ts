@@ -259,8 +259,10 @@ export class AuthService {
           user.name,
           otp,
         );
-      } catch {
-        this.logger.error('Password reset email failed');
+      } catch (error) {
+        this.logger.error(
+          `Password reset email failed: ${formatSafeErrorForLog(error)}`,
+        );
       }
     }
 
@@ -374,6 +376,73 @@ export class AuthService {
 
 function generateOtp() {
   return randomInt(100000, 1000000).toString();
+}
+
+function formatSafeErrorForLog(error: unknown) {
+  if (error instanceof Error) {
+    return `${error.message}; ${JSON.stringify(safeErrorObject(error))}`;
+  }
+
+  return JSON.stringify(sanitizeLogValue(error));
+}
+
+function safeErrorObject(error: Error) {
+  return sanitizeLogValue({
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    cause: 'cause' in error ? error.cause : undefined,
+  });
+}
+
+function sanitizeLogValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((nestedValue) => sanitizeLogValue(nestedValue));
+  }
+
+  if (typeof value === 'object') {
+    const sanitizedObject: Record<string, unknown> = {};
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      if (!isSensitiveLogKey(key)) {
+        sanitizedObject[key] = sanitizeLogValue(nestedValue);
+      }
+    }
+
+    return sanitizedObject;
+  }
+
+  return String(value);
+}
+
+function isSensitiveLogKey(key: string) {
+  const normalizedKey = key.toLowerCase();
+  const sensitiveKeys = [
+    'api_key',
+    'apikey',
+    'authorization',
+    'jwt',
+    'otp',
+    'password',
+    'secret',
+    'token',
+  ];
+
+  return sensitiveKeys.some((sensitiveKey) =>
+    normalizedKey.includes(sensitiveKey),
+  );
 }
 
 function expiresInTenMinutes() {

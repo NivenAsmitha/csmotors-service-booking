@@ -37,12 +37,18 @@ export class EmailService {
   private readonly resend?: Resend;
 
   constructor(configService: ConfigService) {
-    const apiKey = configService.get<string>('RESEND_API_KEY')?.trim();
+    const apiKey =
+      configService.get<string>('RESEND_API_KEY')?.trim() ||
+      process.env.RESEND_API_KEY?.trim();
 
     this.from =
       configService.get<string>('MAIL_FROM')?.trim() ||
+      process.env.MAIL_FROM?.trim() ||
       'CS Motors <onboarding@resend.dev>';
     this.resend = apiKey ? new Resend(apiKey) : undefined;
+
+    this.logger.log(`RESEND_API_KEY configured: ${Boolean(apiKey)}`);
+    this.logger.log(`MAIL_FROM value: ${this.from}`);
   }
 
   sendEmailVerificationOtp(
@@ -119,8 +125,7 @@ export class EmailService {
       text: [
         `Hello ${details.clientName},`,
         '',
-        'Your bike service has been completed.',
-        'Please pick up your vehicle.',
+        'Your service is complete. Please pick up your bike.',
         '',
         'Booking Details:',
         `Booking ID: ${details.bookingId}`,
@@ -146,13 +151,14 @@ export class EmailService {
     text: string;
   }): Promise<void> {
     if (!this.resend) {
-      this.logger.log(
-        `RESEND_API_KEY is not configured. Email fallback:\n${JSON.stringify(email, null, 2)}`,
+      this.logger.warn(
+        'RESEND_API_KEY missing. Email not sent. Dev preview only.',
       );
+      this.logger.log(`Email preview:\n${JSON.stringify(email, null, 2)}`);
       return;
     }
 
-    const { error } = await this.resend.emails.send({
+    const { data, error } = await this.resend.emails.send({
       from: this.from,
       to: email.to,
       subject: email.subject,
@@ -161,8 +167,11 @@ export class EmailService {
     });
 
     if (error) {
-      throw new Error(`Resend email failed: ${error.message}`);
+      this.logger.error(`Resend send failed: ${JSON.stringify(error)}`);
+      throw new Error(error.message || 'Resend email failed');
     }
+
+    this.logger.log(`Email sent with Resend id: ${data?.id}`);
   }
 }
 
@@ -228,7 +237,7 @@ function serviceCompletedEmailTemplate(details: ServiceCompletedEmailDetails) {
     previewText: `Your ${details.serviceName} service has been completed.`,
     content: `
       <p style="${paragraphStyle}">Hello ${escapeHtml(details.clientName)},</p>
-      <p style="${paragraphStyle}">Your bike service has been completed. Please pick up your vehicle.</p>
+      <p style="${paragraphStyle}">Your service is complete. Please pick up your bike.</p>
       <div style="margin: 24px 0; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden;">
         ${detailRow('Booking ID', details.bookingId)}
         ${detailRow('Service', details.serviceName)}
