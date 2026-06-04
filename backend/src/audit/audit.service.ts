@@ -40,8 +40,8 @@ export class AuditService {
             : {}),
         },
       });
-    } catch (error: unknown) {
-      this.logger.error('Audit logging failed', error);
+    } catch {
+      this.logger.error('Audit logging failed');
     }
   }
 

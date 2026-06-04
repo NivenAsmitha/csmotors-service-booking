@@ -55,6 +55,8 @@ model User {
 model Service {
   id                    String   @id @default(uuid())
   name                  String   @unique
+  description           String?
+  details               Json?
   duration_minutes      Int
   max_bookings_per_slot Int
   is_active             Boolean  @default(true)

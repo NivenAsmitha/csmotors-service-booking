@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
 import { Button } from '../../components/ui/Button'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
@@ -17,7 +18,9 @@ import {
   type AssignmentPayload,
 } from '../../features/assignments/assignments.api'
 import { getUsers } from '../../features/users/users.api'
+import { updateBookingStatus } from '../../features/bookings/bookings.api'
 import { useAuthStore } from '../../stores/auth.store'
+import type { BookingStatus } from '../../types/booking'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate, getLocalDateKey } from '../../utils/dates'
 
@@ -33,6 +36,12 @@ const assignmentSchema = z.object({
 })
 
 type AssignmentFormValues = z.infer<typeof assignmentSchema>
+const statusOptions: { label: string; value: BookingStatus }[] = [
+  { label: 'Confirmed', value: 'confirmed' },
+  { label: 'In progress', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+]
 
 export function AssignmentBoardPage() {
   const currentUser = useAuthStore((state) => state.user)
@@ -41,6 +50,10 @@ export function AssignmentBoardPage() {
   const [selectedBooking, setSelectedBooking] =
     useState<AssignmentBoardItem | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<{
+    bookingId: string
+    status: BookingStatus
+  } | null>(null)
   const isReadOnly = currentUser?.role === 'developer'
   const boardQuery = useQuery({
     queryKey: ['assignment-board', date],
@@ -57,6 +70,16 @@ export function AssignmentBoardPage() {
       ),
     [usersQuery.data],
   )
+  const statusMutation = useMutation({
+    mutationFn: ({ bookingId, status }: { bookingId: string; status: BookingStatus }) =>
+      updateBookingStatus(bookingId, status),
+    onError: () => setPendingStatus(null),
+    onSuccess: async () => {
+      setPendingStatus(null)
+      setSuccessMessage('Service status updated successfully.')
+      await queryClient.invalidateQueries({ queryKey: ['assignment-board'] })
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -81,6 +104,9 @@ export function AssignmentBoardPage() {
         <p className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-900">
           {successMessage}
         </p>
+      ) : null}
+      {statusMutation.isError ? (
+        <ErrorText error={statusMutation.error} fallback="Unable to update service status" />
       ) : null}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -169,6 +195,29 @@ export function AssignmentBoardPage() {
                   ? 'Cancelled'
                   : 'Assign'}
             </Button>
+            <label className="mt-4 block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Service status
+              </span>
+              <select
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-100"
+                disabled={isReadOnly || statusMutation.isPending}
+                onChange={(event) =>
+                  setPendingStatus({
+                    bookingId: booking.booking_id,
+                    status: event.target.value as BookingStatus,
+                  })
+                }
+                value={booking.status}
+              >
+                {!statusOptions.some((option) => option.value === booking.status) ? (
+                  <option disabled value={booking.status}>{booking.status.replace('_', ' ')}</option>
+                ) : null}
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
           </article>
         ))}
       </div>
@@ -188,6 +237,20 @@ export function AssignmentBoardPage() {
           await queryClient.invalidateQueries({ queryKey: ['assignment-board'] })
         }}
       />
+      <ConfirmDialog
+        confirmText="Yes, Update Status"
+        loading={statusMutation.isPending}
+        message={`Are you sure you want to mark this service as ${formatStatus(pendingStatus?.status)}?`}
+        onCancel={() => setPendingStatus(null)}
+        onConfirm={() => {
+          if (pendingStatus) {
+            statusMutation.mutate(pendingStatus)
+          }
+        }}
+        open={Boolean(pendingStatus)}
+        title="Update Service Status"
+        variant="warning"
+      />
     </div>
   )
 }
@@ -205,6 +268,7 @@ function AssignmentModal({
   onClose,
   onSuccess,
 }: AssignmentModalProps) {
+  const [pendingValues, setPendingValues] = useState<AssignmentFormValues | null>(null)
   const {
     formState: { errors },
     handleSubmit,
@@ -232,7 +296,11 @@ function AssignmentModal({
         ? updateAssignment(booking.assignment.id, payload)
         : createAssignment({ booking_id: booking.booking_id, ...payload })
     },
-    onSuccess,
+    onError: () => setPendingValues(null),
+    onSuccess: async () => {
+      setPendingValues(null)
+      await onSuccess()
+    },
   })
 
   useEffect(() => {
@@ -245,6 +313,7 @@ function AssignmentModal({
 
   function close() {
     if (!mutation.isPending) {
+      setPendingValues(null)
       onClose()
     }
   }
@@ -258,7 +327,7 @@ function AssignmentModal({
       {mutation.isError ? (
         <ErrorText error={mutation.error} fallback="Unable to save assignment" />
       ) : null}
-      <form className="mt-4 space-y-4" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+      <form className="mt-4 space-y-4" onSubmit={handleSubmit(setPendingValues)}>
         <Select
           error={errors.employee_id?.message}
           label="Employee"
@@ -293,8 +362,30 @@ function AssignmentModal({
           </Button>
         </div>
       </form>
+      <ConfirmDialog
+        confirmText={booking?.assignment ? 'Save assignment changes' : 'Create assignment'}
+        loading={mutation.isPending}
+        message={`${booking?.assignment ? 'Save changes to' : 'Create'} this employee assignment?`}
+        onCancel={() => setPendingValues(null)}
+        onConfirm={() => {
+          if (pendingValues) {
+            mutation.mutate(pendingValues)
+          }
+        }}
+        open={Boolean(pendingValues)}
+        title={booking?.assignment ? 'Confirm assignment changes' : 'Confirm assignment'}
+        variant="default"
+      />
     </Modal>
   )
+}
+
+function formatStatus(status?: BookingStatus) {
+  if (!status) {
+    return ''
+  }
+
+  return status.replace('_', ' ').replace(/^\w/, (character) => character.toUpperCase())
 }
 
 function LoadingText({ text }: { text: string }) {

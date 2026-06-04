@@ -4,12 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   findActive() {
     return this.prisma.service.findMany({
@@ -30,16 +34,44 @@ export class ServicesService {
     });
   }
 
-  async update(id: string, updateServiceDto: UpdateServiceDto) {
-    await this.assertExists(id);
+  async update(
+    currentUserId: string,
+    id: string,
+    updateServiceDto: UpdateServiceDto,
+  ) {
+    const previousService = await this.assertExists(id);
 
     try {
-      return await this.prisma.service.update({
+      const service = await this.prisma.service.update({
         where: {
           id,
         },
         data: updateServiceDto,
       });
+
+      if (
+        updateServiceDto.description !== undefined ||
+        updateServiceDto.details !== undefined
+      ) {
+        await this.auditService.log({
+          userId: currentUserId,
+          action: 'SERVICE_DETAILS_UPDATED',
+          entity: 'service',
+          entityId: service.id,
+          metadata: {
+            old: {
+              description: previousService.description,
+              details: previousService.details,
+            },
+            new: {
+              description: service.description,
+              details: service.details,
+            },
+          },
+        });
+      }
+
+      return service;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -59,11 +91,15 @@ export class ServicesService {
       },
       select: {
         id: true,
+        description: true,
+        details: true,
       },
     });
 
     if (!service) {
       throw new NotFoundException('Service not found');
     }
+
+    return service;
   }
 }

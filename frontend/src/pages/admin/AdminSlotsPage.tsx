@@ -137,7 +137,9 @@ export function AdminSlotsPage() {
       return
     }
 
-    if (confirmation.kind === 'slot') {
+    if (confirmation.kind === 'global-time-mode') {
+      globalTimeModeMutation.mutate(confirmation.showTime)
+    } else if (confirmation.kind === 'slot') {
       closedMutation.mutate({
         id: confirmation.slot.day_slot_id,
         isClosed: !confirmation.slot.is_closed,
@@ -216,11 +218,10 @@ export function AdminSlotsPage() {
             <Button
               className="w-full sm:w-auto"
               disabled={isReadOnly || globalTimeModeMutation.isPending}
-              onClick={() =>
-                globalTimeModeMutation.mutate(
-                  !globalTimeModeQuery.data.show_time,
-                )
-              }
+              onClick={() => setConfirmation({
+                kind: 'global-time-mode',
+                showTime: !globalTimeModeQuery.data.show_time,
+              })}
               variant={globalTimeModeQuery.data.show_time ? 'secondary' : 'primary'}
             >
               {globalTimeModeQuery.data.show_time
@@ -388,6 +389,7 @@ export function AdminSlotsPage() {
         description={getConfirmationCopy(confirmation).description}
         isConfirming={
           closedMutation.isPending ||
+          globalTimeModeMutation.isPending ||
           createClosureMutation.isPending ||
           deleteClosureMutation.isPending
         }
@@ -456,11 +458,22 @@ function AvailabilityBadge({ slot }: { slot: Slot }) {
 }
 
 type Confirmation =
+  | { kind: 'global-time-mode'; showTime: boolean }
   | { kind: 'slot'; slot: Slot }
   | { kind: 'close-day' }
   | { kind: 'reopen-day'; date: string }
 
 function getConfirmationCopy(confirmation: Confirmation | null) {
+  if (confirmation?.kind === 'global-time-mode') {
+    return {
+      confirmLabel: confirmation.showTime ? 'Activate time showing' : 'Deactivate time showing',
+      description: confirmation.showTime
+        ? 'Show exact slot times to customers? Staff already see exact internal times.'
+        : 'Hide exact slot times from customers? Customers will see only slot labels. Staff will still see exact internal times.',
+      title: confirmation.showTime ? 'Activate customer time display' : 'Deactivate customer time display',
+    }
+  }
+
   if (confirmation?.kind === 'slot') {
     const action = confirmation.slot.is_closed ? 'open' : 'close'
     return {

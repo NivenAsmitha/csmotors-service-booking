@@ -6,6 +6,7 @@ import { AdminBookingsPage } from '../pages/admin/AdminBookingsPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminReportsPage } from '../pages/admin/AdminReportsPage'
 import { AdminReviewsPage } from '../pages/admin/AdminReviewsPage'
+import { AdminServicesPage } from '../pages/admin/AdminServicesPage'
 import { AdminSlotsPage } from '../pages/admin/AdminSlotsPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
 import { BookServicePage } from '../pages/client/BookServicePage'
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/admin/dashboard', element: <AdminDashboardPage /> },
           { path: '/admin/users', element: <AdminUsersPage /> },
+          { path: '/admin/services', element: <AdminServicesPage /> },
           { path: '/admin/slots', element: <AdminSlotsPage /> },
           { path: '/admin/bookings', element: <AdminBookingsPage /> },
           { path: '/admin/reports', element: <AdminReportsPage /> },

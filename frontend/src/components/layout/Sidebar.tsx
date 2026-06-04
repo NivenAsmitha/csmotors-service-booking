@@ -5,6 +5,7 @@ import {
   FileChartColumn,
   LayoutDashboard,
   MessageSquareText,
+  ListChecks,
   UserRoundCog,
   Users,
   X,
@@ -23,6 +24,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   developer: [
     { label: 'Dashboard', to: '/developer/dashboard', icon: LayoutDashboard },
     { label: 'Users', to: '/admin/users', icon: Users },
+    { label: 'Services', to: '/admin/services', icon: ListChecks },
     { label: 'Bookings', to: '/admin/bookings', icon: BookOpen },
     { label: 'Reports', to: '/admin/reports', icon: FileChartColumn },
     { label: 'Audit Logs', to: '/developer/audit-logs', icon: ClipboardList },
@@ -30,6 +32,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   admin: [
     { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Users', to: '/admin/users', icon: Users },
+    { label: 'Services', to: '/admin/services', icon: ListChecks },
     { label: 'Slots', to: '/admin/slots', icon: CalendarClock },
     { label: 'Bookings', to: '/admin/bookings', icon: BookOpen },
     { label: 'Reviews', to: '/admin/reviews', icon: MessageSquareText },

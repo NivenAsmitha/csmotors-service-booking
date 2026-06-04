@@ -114,8 +114,8 @@ export class BookingsService {
     });
     try {
       await this.notifyItSupport(booking.id);
-    } catch (error: unknown) {
-      this.logger.error('IT Support booking notifications failed', error);
+    } catch {
+      this.logger.error('IT Support booking notifications failed');
     }
 
     return booking;
@@ -243,16 +243,15 @@ export class BookingsService {
     id: string,
     updateBookingStatusDto: UpdateBookingStatusDto,
   ) {
+    if (currentUser.role === UserRole.employee) {
+      throw new ForbiddenException(
+        'Employees cannot update booking status. IT Support must update service status.',
+      );
+    }
+
     const booking = await this.prisma.booking.findFirst({
       where: {
         id,
-        ...(currentUser.role === UserRole.employee
-          ? {
-              assignment: {
-                employee_id: currentUser.id,
-              },
-            }
-          : {}),
       },
       select: {
         id: true,
@@ -288,6 +287,13 @@ export class BookingsService {
         },
       },
     });
+
+    if (
+      booking.status !== BookingStatus.completed &&
+      updatedBooking.status === BookingStatus.completed
+    ) {
+      await this.notifyClientServiceCompleted(updatedBooking.id);
+    }
 
     return transformBooking(updatedBooking, false);
   }
@@ -412,8 +418,8 @@ export class BookingsService {
               recipient: recipient.email,
             },
           });
-        } catch (error: unknown) {
-          this.logger.error('IT Support booking notification failed', error);
+        } catch {
+          this.logger.error('IT Support booking notification failed');
           await this.auditService.log({
             userId: recipient.id,
             action: 'booking.it_support_email_failed',
@@ -426,6 +432,89 @@ export class BookingsService {
         }
       }),
     );
+  }
+
+  private async notifyClientServiceCompleted(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      select: {
+        id: true,
+        status: true,
+        bike_number: true,
+        bike_model: true,
+        client: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        daySlot: {
+          select: {
+            date: true,
+            slot: {
+              select: {
+                label: true,
+                service: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        assignment: {
+          select: {
+            employee: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      return;
+    }
+
+    try {
+      await this.emailService.sendServiceCompletedToClient(
+        booking.client.email,
+        {
+          bookingId: booking.id,
+          clientName: booking.client.name,
+          serviceName: booking.daySlot.slot.service.name,
+          bookingDate: dateKey(booking.daySlot.date),
+          slotLabel: booking.daySlot.slot.label,
+          bikeNumber: booking.bike_number,
+          bikeModel: booking.bike_model,
+          employeeName: booking.assignment?.employee.name,
+          status: booking.status,
+        },
+      );
+      await this.auditService.log({
+        action: 'SERVICE_COMPLETION_EMAIL_SENT',
+        entity: 'booking',
+        entityId: booking.id,
+        metadata: {
+          recipient: booking.client.email,
+        },
+      });
+    } catch {
+      this.logger.error('Service completion email failed');
+      await this.auditService.log({
+        action: 'SERVICE_COMPLETION_EMAIL_FAILED',
+        entity: 'booking',
+        entityId: booking.id,
+        metadata: {
+          recipient: booking.client.email,
+        },
+      });
+    }
   }
 
   private parseStatus(value: string) {

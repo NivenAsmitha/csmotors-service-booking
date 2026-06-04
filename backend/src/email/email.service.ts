@@ -18,6 +18,18 @@ export type NewBookingEmailDetails = {
   status: string;
 };
 
+export type ServiceCompletedEmailDetails = {
+  bookingId: string;
+  clientName: string;
+  serviceName: string;
+  bookingDate: string;
+  slotLabel: string;
+  bikeNumber?: string | null;
+  bikeModel?: string | null;
+  employeeName?: string | null;
+  status: string;
+};
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -77,7 +89,7 @@ export class EmailService {
   ): Promise<void> {
     return this.send({
       to,
-      subject: 'New service booking - CS Motors',
+      subject: 'New Service Booking - CS Motors',
       text: [
         'A new CS Motors service booking has been created.',
         `Booking ID: ${details.bookingId}`,
@@ -94,6 +106,36 @@ export class EmailService {
         `Status: ${details.status}`,
       ].join('\n'),
       html: newBookingEmailTemplate(details),
+    });
+  }
+
+  sendServiceCompletedToClient(
+    to: string,
+    details: ServiceCompletedEmailDetails,
+  ): Promise<void> {
+    return this.send({
+      to,
+      subject: 'Your Bike Service is Complete - CS Motors',
+      text: [
+        `Hello ${details.clientName},`,
+        '',
+        'Your bike service has been completed.',
+        'Please pick up your vehicle.',
+        '',
+        'Booking Details:',
+        `Booking ID: ${details.bookingId}`,
+        `Service: ${details.serviceName}`,
+        `Date: ${details.bookingDate}`,
+        `Slot label: ${details.slotLabel}`,
+        `Bike number: ${details.bikeNumber || 'Not provided'}`,
+        `Bike model: ${details.bikeModel || 'Not provided'}`,
+        `Assigned employee: ${details.employeeName || 'Not assigned'}`,
+        `Status: ${details.status}`,
+        '',
+        'Thank you,',
+        'CS Motors Service Booking System',
+      ].join('\n'),
+      html: serviceCompletedEmailTemplate(details),
     });
   }
 
@@ -176,6 +218,28 @@ function newBookingEmailTemplate(details: NewBookingEmailDetails) {
         ${detailRow('Status', details.status)}
       </div>
       <p style="${mutedParagraphStyle}">This notification is for internal scheduling. Exact time details should be used by staff when coordinating workshop assignments.</p>
+    `,
+  });
+}
+
+function serviceCompletedEmailTemplate(details: ServiceCompletedEmailDetails) {
+  return emailLayout({
+    title: 'Your bike service is complete',
+    previewText: `Your ${details.serviceName} service has been completed.`,
+    content: `
+      <p style="${paragraphStyle}">Hello ${escapeHtml(details.clientName)},</p>
+      <p style="${paragraphStyle}">Your bike service has been completed. Please pick up your vehicle.</p>
+      <div style="margin: 24px 0; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden;">
+        ${detailRow('Booking ID', details.bookingId)}
+        ${detailRow('Service', details.serviceName)}
+        ${detailRow('Date', details.bookingDate)}
+        ${detailRow('Slot label', details.slotLabel)}
+        ${detailRow('Bike number', details.bikeNumber || 'Not provided')}
+        ${detailRow('Bike model', details.bikeModel || 'Not provided')}
+        ${detailRow('Assigned employee', details.employeeName || 'Not assigned')}
+        ${detailRow('Status', details.status, true)}
+      </div>
+      <p style="${paragraphStyle}">Thank you,<br><strong>CS Motors Service Booking System</strong></p>
     `,
   });
 }

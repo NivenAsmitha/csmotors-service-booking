@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
+import { type AuthenticatedUser } from '../auth/auth.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -30,7 +32,11 @@ export class ServicesController {
   @Roles(UserRole.admin)
   @ApiOperation({ summary: 'Update a service' })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto) {
-    return this.servicesService.update(id, updateServiceDto);
+  update(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() updateServiceDto: UpdateServiceDto,
+  ) {
+    return this.servicesService.update(currentUser.id, id, updateServiceDto);
   }
 }

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { LoadingSpinner } from './LoadingSpinner'
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -16,6 +16,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   secondary:
     'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
   danger: 'border border-red-200 bg-white text-red-700 hover:bg-red-50',
+  warning: 'bg-amber-500 text-slate-950 hover:bg-amber-400',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
 }
 

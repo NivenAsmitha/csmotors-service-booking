@@ -1,6 +1,8 @@
 export type Service = {
   id: string
   name: string
+  description?: string | null
+  details?: string[] | null
   duration_minutes: number
   max_bookings_per_slot: number
   is_active: boolean

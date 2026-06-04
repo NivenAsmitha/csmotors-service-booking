@@ -2,6 +2,8 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsInt,
+  IsArray,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Min,
@@ -31,4 +33,21 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'Complete bike service with detailed inspection and adjustments.',
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({
+    example: ['Brake inspection', 'Chain adjustment'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  details?: string[];
 }

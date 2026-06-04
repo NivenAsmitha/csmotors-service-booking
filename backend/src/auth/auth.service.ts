@@ -87,7 +87,6 @@ export class AuthService {
           email_verification_expires_at: expiresInTenMinutes(),
         },
       });
-
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -113,7 +112,8 @@ export class AuthService {
     await this.sendVerificationEmail(user, otp);
 
     return {
-      message: 'Registration successful. Please check your email for verification code.',
+      message:
+        'Registration successful. Please check your email for verification code.',
     };
   }
 
@@ -254,9 +254,13 @@ export class AuthService {
       });
 
       try {
-        await this.emailService.sendPasswordResetOtp(user.email, user.name, otp);
-      } catch (error: unknown) {
-        this.logger.error('Password reset email failed', error);
+        await this.emailService.sendPasswordResetOtp(
+          user.email,
+          user.name,
+          otp,
+        );
+      } catch {
+        this.logger.error('Password reset email failed');
       }
     }
 
@@ -273,7 +277,9 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new BadRequestException('Password reset code is invalid or expired');
+      throw new BadRequestException(
+        'Password reset code is invalid or expired',
+      );
     }
 
     await assertValidOtp(
@@ -349,8 +355,8 @@ export class AuthService {
         entity: 'user',
         entityId: user.id,
       });
-    } catch (error: unknown) {
-      this.logger.error('Email verification email failed', error);
+    } catch {
+      this.logger.error('Email verification email failed');
     }
   }
 }

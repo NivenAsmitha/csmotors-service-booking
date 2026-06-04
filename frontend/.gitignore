@@ -1,24 +1,14 @@
-@"
 # Dependencies
 node_modules/
-backend/node_modules/
-frontend/node_modules/
 
 # Environment files
 .env
 .env.local
 .env.*.local
-backend/.env
-frontend/.env
 
-# Build outputs
+# Build output
 dist/
-backend/dist/
-frontend/dist/
-frontend/build/
-
-# Prisma generated
-backend/generated/
+build/
 
 # Logs
 *.log
@@ -29,4 +19,3 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
-"@ | Set-Content .gitignore

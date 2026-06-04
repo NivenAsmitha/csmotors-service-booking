@@ -16,6 +16,11 @@ export type UpdateUserPayload = {
   role?: InternalUserRole
 }
 
+export type ResetUserPasswordPayload = {
+  newPassword: string
+  must_change_password?: boolean
+}
+
 export async function getUsers() {
   const response = await api.get<User[]>('/users')
   return response.data
@@ -38,5 +43,13 @@ export async function updateUser(id: string, payload: UpdateUserPayload) {
 
 export async function deactivateUser(id: string) {
   const response = await api.delete<User>(`/users/${id}`)
+  return response.data
+}
+
+export async function resetUserPassword(
+  id: string,
+  payload: ResetUserPasswordPayload,
+) {
+  const response = await api.patch<User>(`/users/${id}/password`, payload)
   return response.data
 }

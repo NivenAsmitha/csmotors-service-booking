@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Select } from '../../components/ui/Select'
 import {
   getBookings,
@@ -32,6 +33,10 @@ export function AdminBookingsPage() {
   const [serviceId, setServiceId] = useState('')
   const [search, setSearch] = useState('')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<{
+    bookingId: string
+    nextStatus: BookingStatus
+  } | null>(null)
   const filters = useMemo<BookingFilters>(
     () => ({
       ...(date ? { date } : {}),
@@ -60,7 +65,9 @@ export function AdminBookingsPage() {
       bookingId: string
       nextStatus: BookingStatus
     }) => updateBookingStatus(bookingId, nextStatus),
+    onError: () => setPendingStatus(null),
     onSuccess: async () => {
+      setPendingStatus(null)
       setSuccessMessage('Booking status updated.')
       await queryClient.invalidateQueries({ queryKey: ['bookings'] })
     },
@@ -229,7 +236,7 @@ export function AdminBookingsPage() {
                           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-100"
                           disabled={isReadOnly || statusMutation.isPending}
                           onChange={(event) =>
-                            statusMutation.mutate({
+                            setPendingStatus({
                               bookingId: booking.id,
                               nextStatus: event.target.value as BookingStatus,
                             })
@@ -256,8 +263,30 @@ export function AdminBookingsPage() {
           ) : null}
         </section>
       ) : null}
+      <ConfirmDialog
+        confirmText="Yes, Update Status"
+        loading={statusMutation.isPending}
+        message={`Are you sure you want to mark this service as ${formatStatus(pendingStatus?.nextStatus)}?`}
+        onCancel={() => setPendingStatus(null)}
+        onConfirm={() => {
+          if (pendingStatus) {
+            statusMutation.mutate(pendingStatus)
+          }
+        }}
+        open={Boolean(pendingStatus)}
+        title="Update Service Status"
+        variant="warning"
+      />
     </div>
   )
+}
+
+function formatStatus(status?: BookingStatus) {
+  if (!status) {
+    return ''
+  }
+
+  return status.replace('_', ' ').replace(/^\w/, (character) => character.toUpperCase())
 }
 
 function LoadingText({ text }: { text: string }) {

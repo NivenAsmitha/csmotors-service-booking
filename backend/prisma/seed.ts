@@ -20,6 +20,15 @@ const prisma = new PrismaClient({
 const services = [
   {
     name: 'Free Service',
+    description: 'Basic bike inspection and essential maintenance checks.',
+    details: [
+      'Engine oil level check',
+      'Brake inspection',
+      'Chain lubrication and adjustment',
+      'Tyre pressure check',
+      'Basic lights and horn check',
+      'General safety inspection',
+    ],
     duration_minutes: 60,
     max_bookings_per_slot: 1,
     is_active: true,
@@ -38,6 +47,18 @@ const services = [
   },
   {
     name: 'Full Service',
+    description:
+      'Complete bike service with detailed inspection and adjustments.',
+    details: [
+      'Engine oil check or replacement support',
+      'Air filter inspection',
+      'Brake adjustment and inspection',
+      'Chain cleaning, lubrication and adjustment',
+      'Clutch and throttle play check',
+      'Battery and lights inspection',
+      'Tyre and wheel inspection',
+      'Full safety inspection',
+    ],
     duration_minutes: 90,
     max_bookings_per_slot: 2,
     is_active: true,
@@ -53,6 +74,17 @@ const services = [
   },
   {
     name: 'Super Service',
+    description:
+      'Premium full bike service with complete inspection and service care.',
+    details: [
+      'Complete bike inspection',
+      'Engine performance check',
+      'Brake system detailed inspection',
+      'Chain and sprocket inspection',
+      'Electrical system check',
+      'Suspension and wheel check',
+      'Final safety review',
+    ],
     duration_minutes: 690,
     max_bookings_per_slot: 1,
     is_active: true,
@@ -142,8 +174,10 @@ main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (error) => {
-    console.error(error);
+  .catch(async () => {
+    console.error(
+      'Database seeding failed. Review database connectivity and seed data.',
+    );
     await prisma.$disconnect();
     process.exit(1);
   });

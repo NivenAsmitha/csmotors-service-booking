@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -45,6 +46,7 @@ export function BookServicePage() {
   const [bikeModel, setBikeModel] = useState('')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
   const servicesQuery = useQuery({
     queryKey: ['services'],
     queryFn: getServices,
@@ -56,6 +58,7 @@ export function BookServicePage() {
   })
   const bookingMutation = useMutation({
     mutationFn: createBooking,
+    onError: () => setIsConfirming(false),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['my-bookings'] })
       navigate('/client/bookings', {
@@ -81,6 +84,14 @@ export function BookServicePage() {
     }
 
     setFormError(null)
+    setIsConfirming(true)
+  }
+
+  function confirmBooking() {
+    if (!selectedDaySlotId) {
+      return
+    }
+
     bookingMutation.mutate({
       day_slot_id: selectedDaySlotId,
       bike_number: bikeNumber.trim(),
@@ -88,6 +99,8 @@ export function BookServicePage() {
       ...(notes.trim() ? { notes: notes.trim() } : {}),
     })
   }
+  const selectedService = servicesQuery.data?.find((service) => service.id === serviceId)
+  const selectedSlot = slotsQuery.data?.find((slot) => slot.day_slot_id === selectedDaySlotId)
 
   return (
     <div className="space-y-6">
@@ -115,24 +128,51 @@ export function BookServicePage() {
         ) : null}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {servicesQuery.data?.map((service) => (
-            <button
+            <article
               className={[
-                'rounded-xl border p-4 text-left transition',
+                'flex min-h-full flex-col rounded-xl border p-4 text-left transition',
                 serviceId === service.id
                   ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-100'
                   : 'border-slate-200 hover:border-brand-500 hover:bg-slate-50',
               ].join(' ')}
               key={service.id}
-              onClick={() => selectService(service.id)}
-              type="button"
             >
-              <span className="block font-semibold text-slate-900">
-                {service.name}
-              </span>
-              <span className="mt-1 block text-xs text-slate-500">
+              <h3 className="font-bold text-slate-900">{service.name}</h3>
+              {service.description ? (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {service.description}
+                </p>
+              ) : null}
+              <p className="mt-2 text-xs font-semibold text-slate-500">
                 {service.duration_minutes} minutes
-              </span>
-            </button>
+              </p>
+              <div className="mt-4 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Includes
+                </p>
+                {service.details?.length ? (
+                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                    {service.details.map((detail) => (
+                      <li className="flex gap-2" key={detail}>
+                        <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-600" />
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">
+                    No service details added yet.
+                  </p>
+                )}
+              </div>
+              <Button
+                className="mt-5 w-full"
+                onClick={() => selectService(service.id)}
+                variant={serviceId === service.id ? 'primary' : 'secondary'}
+              >
+                {serviceId === service.id ? 'Selected' : 'Choose Service'}
+              </Button>
+            </article>
           ))}
         </div>
         {formError && !selectedDaySlotId ? (
@@ -279,6 +319,24 @@ export function BookServicePage() {
           Confirm Booking
         </Button>
       </Card>
+      <ConfirmDialog
+        confirmText="Create booking"
+        loading={bookingMutation.isPending}
+        message={
+          <div className="space-y-1">
+            <p>Confirm this service booking?</p>
+            <p><span className="font-semibold">Service:</span> {selectedService?.name}</p>
+            <p><span className="font-semibold">Date:</span> {date}</p>
+            <p><span className="font-semibold">Slot:</span> {selectedSlot?.label}</p>
+            <p><span className="font-semibold">Bike:</span> {bikeNumber.trim()} | {bikeModel.trim()}</p>
+          </div>
+        }
+        onCancel={() => setIsConfirming(false)}
+        onConfirm={confirmBooking}
+        open={isConfirming}
+        title="Confirm service booking"
+        variant="default"
+      />
     </div>
   )
 }

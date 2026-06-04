@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Search, UserRoundX } from 'lucide-react'
+import { KeyRound, Pencil, Plus, Search, UserRoundX } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -14,6 +14,7 @@ import {
   createUser,
   deactivateUser,
   getUsers,
+  resetUserPassword,
   updateUser,
 } from '../../features/users/users.api'
 import { useAuthStore } from '../../stores/auth.store'
@@ -25,7 +26,7 @@ const createUserSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.string().trim().email('Enter a valid email address'),
   phone: z.string().trim(),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(internalRoles),
 })
 const editUserSchema = z.object({
@@ -34,9 +35,20 @@ const editUserSchema = z.object({
   is_active: z.boolean(),
   role: z.enum(internalRoles),
 })
+const resetPasswordSchema = z
+  .object({
+    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+    must_change_password: z.boolean(),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
 
 type CreateUserForm = z.infer<typeof createUserSchema>
 type EditUserForm = z.infer<typeof editUserSchema>
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
 const roleOptions = [
   { label: 'Admin', value: 'admin' },
@@ -59,7 +71,7 @@ const activeFilterOptions = [
 
 export function AdminUsersPage() {
   const currentUser = useAuthStore((state) => state.user)
-  const isReadOnly = currentUser?.role === 'developer'
+  const isDeveloper = currentUser?.role === 'developer'
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
@@ -67,6 +79,7 @@ export function AdminUsersPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<User | null>(null)
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null)
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const usersQuery = useQuery({
     queryKey: ['users'],
@@ -111,7 +124,7 @@ export function AdminUsersPage() {
             Create internal users, update account details, and deactivate access.
           </p>
         </div>
-        {!isReadOnly ? (
+        {currentUser?.role === 'admin' || isDeveloper ? (
           <Button className="w-full sm:w-auto" onClick={() => setIsCreateOpen(true)}>
             <Plus aria-hidden="true" className="size-4" />
             Create User
@@ -119,9 +132,9 @@ export function AdminUsersPage() {
         ) : null}
       </section>
 
-      {isReadOnly ? (
+      {isDeveloper ? (
         <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
-          Developer read-only
+          Developer access: create internal accounts and reset passwords. Other user changes remain read-only.
         </p>
       ) : null}
       {successMessage ? (
@@ -214,8 +227,19 @@ export function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      {isReadOnly ? (
-                        <span className="text-xs text-slate-500">Read only</span>
+                      {isDeveloper ? (
+                        user.role !== 'developer' || user.id === currentUser?.id ? (
+                          <Button
+                            className="px-3 py-2"
+                            onClick={() => setResetPasswordTarget(user)}
+                            variant="secondary"
+                          >
+                            <KeyRound aria-hidden="true" className="size-3.5" />
+                            Reset Password
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-slate-500">Protected developer</span>
+                        )
                       ) : (
                         <div className="flex gap-2">
                           <Button
@@ -270,6 +294,14 @@ export function AdminUsersPage() {
         }}
         user={editTarget}
       />
+      <ResetPasswordModal
+        onClose={() => setResetPasswordTarget(null)}
+        onSuccess={() => {
+          setSuccessMessage('User password reset successfully.')
+          setResetPasswordTarget(null)
+        }}
+        user={resetPasswordTarget}
+      />
       <ConfirmDialog
         confirmLabel="Deactivate user"
         description={`Deactivate ${deactivateTarget?.name ?? 'this user'}? They will no longer be able to log in.`}
@@ -301,6 +333,7 @@ function CreateUserModal({
   onSuccess,
 }: CreateUserModalProps) {
   const queryClient = useQueryClient()
+  const [pendingValues, setPendingValues] = useState<CreateUserForm | null>(null)
   const {
     formState: { errors },
     handleSubmit,
@@ -313,6 +346,7 @@ function CreateUserModal({
   const mutation = useMutation({
     mutationFn: createUser,
     onSuccess: async () => {
+      setPendingValues(null)
       reset()
       onSuccess()
       await queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -325,6 +359,7 @@ function CreateUserModal({
 
   function close() {
     if (!mutation.isPending) {
+      setPendingValues(null)
       reset()
       onClose()
     }
@@ -339,12 +374,7 @@ function CreateUserModal({
       ) : null}
       <form
         className="space-y-4"
-        onSubmit={handleSubmit((values) =>
-          mutation.mutate({
-            ...values,
-            ...(values.phone ? { phone: values.phone } : {}),
-          }),
-        )}
+        onSubmit={handleSubmit(setPendingValues)}
       >
         <Input error={errors.name?.message} label="Name" placeholder="Full name" {...register('name')} />
         <Input
@@ -363,7 +393,7 @@ function CreateUserModal({
         <Input
           error={errors.password?.message}
           label="Temporary password"
-          placeholder="At least 6 characters"
+          placeholder="At least 8 characters"
           type="password"
           {...register('password')}
         />
@@ -382,6 +412,135 @@ function CreateUserModal({
           </Button>
         </div>
       </form>
+      <ConfirmDialog
+        confirmText="Create user"
+        message={`Create ${pendingValues?.role.replace('_', ' ') ?? 'this'} account for ${pendingValues?.email ?? 'this user'}?`}
+        onCancel={() => setPendingValues(null)}
+        onConfirm={() => {
+          if (pendingValues) {
+            mutation.mutate({
+              ...pendingValues,
+              ...(pendingValues.phone ? { phone: pendingValues.phone } : {}),
+            })
+          }
+        }}
+        open={Boolean(pendingValues)}
+        loading={mutation.isPending}
+        title="Create internal user"
+        variant="default"
+      />
+    </Modal>
+  )
+}
+
+type ResetPasswordModalProps = {
+  onClose: () => void
+  onSuccess: () => void
+  user: User | null
+}
+
+function ResetPasswordModal({ onClose, onSuccess, user }: ResetPasswordModalProps) {
+  const queryClient = useQueryClient()
+  const [pendingValues, setPendingValues] = useState<ResetPasswordForm | null>(null)
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: '',
+      must_change_password: false,
+    },
+  })
+  const mutation = useMutation({
+    mutationFn: (values: ResetPasswordForm) => {
+      if (!user) {
+        throw new Error('User is required')
+      }
+
+      return resetUserPassword(user.id, {
+        newPassword: values.newPassword,
+        must_change_password: values.must_change_password,
+      })
+    },
+    onSuccess: async () => {
+      setPendingValues(null)
+      reset()
+      onSuccess()
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+
+  useEffect(() => {
+    reset({
+      newPassword: '',
+      confirmPassword: '',
+      must_change_password: user?.role === 'employee' || user?.role === 'it_support',
+    })
+    setPendingValues(null)
+  }, [reset, user])
+
+  function close() {
+    if (!mutation.isPending) {
+      setPendingValues(null)
+      onClose()
+    }
+  }
+
+  return (
+    <Modal isOpen={Boolean(user)} onClose={close} title={`Reset password${user ? `: ${user.name}` : ''}`}>
+      {mutation.isError ? (
+        <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+          {getApiErrorMessage(mutation.error, 'Unable to reset password')}
+        </p>
+      ) : null}
+      <form className="space-y-4" onSubmit={handleSubmit(setPendingValues)}>
+        <Input
+          error={errors.newPassword?.message}
+          label="New temporary password"
+          placeholder="At least 8 characters"
+          type="password"
+          {...register('newPassword')}
+        />
+        <Input
+          error={errors.confirmPassword?.message}
+          label="Confirm temporary password"
+          placeholder="Repeat the temporary password"
+          type="password"
+          {...register('confirmPassword')}
+        />
+        <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-3">
+          <input className="size-4 accent-brand-600" type="checkbox" {...register('must_change_password')} />
+          <span className="text-sm font-semibold text-slate-700">
+            Require password change at next login
+          </span>
+        </label>
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} onClick={close} variant="secondary">
+            Cancel
+          </Button>
+          <Button className="w-full sm:w-auto" disabled={mutation.isPending} type="submit" variant="warning">
+            Review password reset
+          </Button>
+        </div>
+      </form>
+      <ConfirmDialog
+        confirmText="Reset password"
+        message={`Reset the password for ${user?.name ?? 'this user'}? Any active password-reset link will be invalidated.`}
+        onCancel={() => setPendingValues(null)}
+        onConfirm={() => {
+          if (pendingValues) {
+            mutation.mutate(pendingValues)
+          }
+        }}
+        open={Boolean(pendingValues)}
+        loading={mutation.isPending}
+        title="Confirm password reset"
+        variant="warning"
+      />
     </Modal>
   )
 }

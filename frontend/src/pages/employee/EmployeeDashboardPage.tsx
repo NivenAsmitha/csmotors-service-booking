@@ -1,41 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, Clock3 } from 'lucide-react'
 import { useState } from 'react'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
-import { updateBookingStatus } from '../../features/bookings/bookings.api'
 import { getMyAssignments } from '../../features/assignments/assignments.api'
 import { useAuthStore } from '../../stores/auth.store'
-import type { BookingStatus } from '../../types/booking'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate } from '../../utils/dates'
 
-const employeeStatuses: { label: string; value: BookingStatus }[] = [
-  { label: 'Confirmed', value: 'confirmed' },
-  { label: 'In progress', value: 'in_progress' },
-  { label: 'Completed', value: 'completed' },
-]
-
 export function EmployeeDashboardPage() {
   const user = useAuthStore((state) => state.user)
-  const queryClient = useQueryClient()
   const [date, setDate] = useState('')
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const assignmentsQuery = useQuery({
     queryKey: ['my-assignments', date],
     queryFn: () => getMyAssignments(date || undefined),
-  })
-  const statusMutation = useMutation({
-    mutationFn: ({
-      bookingId,
-      status,
-    }: {
-      bookingId: string
-      status: BookingStatus
-    }) => updateBookingStatus(bookingId, status),
-    onSuccess: async () => {
-      setSuccessMessage('Booking status updated.')
-      await queryClient.invalidateQueries({ queryKey: ['my-assignments'] })
-    },
   })
 
   return (
@@ -48,18 +25,10 @@ export function EmployeeDashboardPage() {
           Welcome, {user?.name ?? 'Employee'}
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Review assigned service jobs and update workshop progress.
+          Review assigned service jobs and workshop scheduling details.
         </p>
       </section>
 
-      {successMessage ? (
-        <p className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-900">
-          {successMessage}
-        </p>
-      ) : null}
-      {statusMutation.isError ? (
-        <ErrorText error={statusMutation.error} fallback="Unable to update booking status" />
-      ) : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <label className="block max-w-xs">
           <span className="text-sm font-semibold text-slate-700">Filter by date (optional)</span>
@@ -101,29 +70,9 @@ export function EmployeeDashboardPage() {
                 <p><span className="font-semibold text-slate-800">Bike reference:</span> {assignment.vehicle_ref || 'Not provided'}</p>
                 <p><span className="font-semibold text-slate-800">Scheduled:</span> {assignment.scheduled_time || 'Not set'}</p>
               </div>
-              <label className="mt-4 block">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Update status</span>
-                <select
-                  className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-100"
-                  disabled={statusMutation.isPending || booking.status === 'cancelled'}
-                  onChange={(event) =>
-                    statusMutation.mutate({
-                      bookingId: booking.id,
-                      status: event.target.value as BookingStatus,
-                    })
-                  }
-                  value={booking.status}
-                >
-                  {!employeeStatuses.some((option) => option.value === booking.status) ? (
-                    <option disabled value={booking.status}>
-                      {booking.status.replace('_', ' ')}
-                    </option>
-                  ) : null}
-                  {employeeStatuses.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
+              <p className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+                Status managed by IT Support
+              </p>
             </article>
           )
         })}

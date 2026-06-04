@@ -18,6 +18,7 @@ import { type AuthenticatedUser } from '../auth/auth.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
@@ -56,9 +57,25 @@ export class UsersController {
     );
   }
 
+  @ApiOperation({ summary: 'Reset a user password as a developer' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @Roles(UserRole.developer)
+  @Patch(':id/password')
+  resetPassword(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() resetUserPasswordDto: ResetUserPasswordDto,
+  ) {
+    return this.usersService.resetPasswordByDeveloper(
+      currentUser.id,
+      id,
+      resetUserPasswordDto,
+    );
+  }
+
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @Roles(UserRole.developer, UserRole.admin)
+  @Roles(UserRole.admin)
   @Patch(':id')
   update(
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -75,7 +92,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Soft delete a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @Roles(UserRole.developer, UserRole.admin)
+  @Roles(UserRole.admin)
   @Delete(':id')
   remove(
     @CurrentUser() currentUser: AuthenticatedUser,

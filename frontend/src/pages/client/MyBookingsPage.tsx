@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Clock3 } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Alert } from '../../components/ui/Alert'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import {
@@ -17,6 +19,7 @@ import { formatDate, getLocalDateKey } from '../../utils/dates'
 export function MyBookingsPage() {
   const location = useLocation()
   const queryClient = useQueryClient()
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null)
   const successMessage = (
     location.state as { successMessage?: string } | null
   )?.successMessage
@@ -26,7 +29,9 @@ export function MyBookingsPage() {
   })
   const cancellationMutation = useMutation({
     mutationFn: cancelBooking,
+    onError: () => setCancelBookingId(null),
     onSuccess: async () => {
+      setCancelBookingId(null)
       await queryClient.invalidateQueries({ queryKey: ['my-bookings'] })
     },
   })
@@ -122,7 +127,7 @@ export function MyBookingsPage() {
                 <Button
                   className="mt-5 w-full sm:w-auto"
                   disabled={cancellationMutation.isPending}
-                  onClick={() => cancellationMutation.mutate(booking.id)}
+                  onClick={() => setCancelBookingId(booking.id)}
                   loading={
                     cancellationMutation.isPending &&
                     cancellationMutation.variables === booking.id
@@ -145,6 +150,20 @@ export function MyBookingsPage() {
           )
         })}
       </div>
+      <ConfirmDialog
+        confirmText="Cancel booking"
+        loading={cancellationMutation.isPending}
+        message="Cancel this service booking? This action cannot be undone."
+        onCancel={() => setCancelBookingId(null)}
+        onConfirm={() => {
+          if (cancelBookingId) {
+            cancellationMutation.mutate(cancelBookingId)
+          }
+        }}
+        open={Boolean(cancelBookingId)}
+        title="Cancel booking"
+        variant="danger"
+      />
     </div>
   )
 }
