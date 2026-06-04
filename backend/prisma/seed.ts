@@ -171,13 +171,17 @@ async function main() {
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async () => {
-    console.error(
-      'Database seeding failed. Review database connectivity and seed data.',
-    );
-    await prisma.$disconnect();
+  .catch((error) => {
+    console.error('Database seeding failed with real error:');
+    console.error(error);
+
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Stack:', error.stack);
+    }
+
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
