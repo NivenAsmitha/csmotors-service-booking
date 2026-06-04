@@ -99,75 +99,81 @@ function time(value: string) {
 async function main() {
   const password_hash = await bcrypt.hash('Developer@123', 12);
 
-  await prisma.$transaction(async (tx) => {
-    await tx.user.upsert({
-      where: {
-        email: 'developer@csmotorsservicebooking.lk',
-      },
-      update: {
-        name: 'CS Motors Developer',
-        phone: '0000000000',
-        password_hash,
-        role: UserRole.developer,
-        is_active: true,
-        must_change_password: false,
-        email_verified: true,
-      },
-      create: {
-        name: 'CS Motors Developer',
-        email: 'developer@csmotorsservicebooking.lk',
-        phone: '0000000000',
-        password_hash,
-        role: UserRole.developer,
-        is_active: true,
-        must_change_password: false,
-        email_verified: true,
-      },
-    });
-
-    for (const serviceData of services) {
-      const { slots, ...serviceValues } = serviceData;
-      const service = await tx.service.upsert({
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.user.upsert({
         where: {
-          name: serviceValues.name,
+          email: 'developer@csmotorsservicebooking.lk',
         },
-        update: serviceValues,
-        create: serviceValues,
+        update: {
+          name: 'CS Motors Developer',
+          phone: '0000000000',
+          password_hash,
+          role: UserRole.developer,
+          is_active: true,
+          must_change_password: false,
+          email_verified: true,
+        },
+        create: {
+          name: 'CS Motors Developer',
+          email: 'developer@csmotorsservicebooking.lk',
+          phone: '0000000000',
+          password_hash,
+          role: UserRole.developer,
+          is_active: true,
+          must_change_password: false,
+          email_verified: true,
+        },
       });
 
-      for (const [label, start, end] of slots) {
-        const slotValues = {
-          label,
-          start_time: time(start),
-          end_time: time(end),
-          is_default: true,
-          show_time: true,
-        };
-        const existingSlot = await tx.timeSlot.findFirst({
+      for (const serviceData of services) {
+        const { slots, ...serviceValues } = serviceData;
+        const service = await tx.service.upsert({
           where: {
-            service_id: service.id,
-            label,
+            name: serviceValues.name,
           },
+          update: serviceValues,
+          create: serviceValues,
         });
 
-        if (existingSlot) {
-          await tx.timeSlot.update({
+        for (const [label, start, end] of slots) {
+          const slotValues = {
+            label,
+            start_time: time(start),
+            end_time: time(end),
+            is_default: true,
+            show_time: true,
+          };
+          const existingSlot = await tx.timeSlot.findFirst({
             where: {
-              id: existingSlot.id,
-            },
-            data: slotValues,
-          });
-        } else {
-          await tx.timeSlot.create({
-            data: {
               service_id: service.id,
-              ...slotValues,
+              label,
             },
           });
+
+          if (existingSlot) {
+            await tx.timeSlot.update({
+              where: {
+                id: existingSlot.id,
+              },
+              data: slotValues,
+            });
+          } else {
+            await tx.timeSlot.create({
+              data: {
+                service_id: service.id,
+                ...slotValues,
+              },
+            });
+          }
         }
       }
-    }
-  });
+    },
+    {
+      maxWait: 20000,
+      timeout: 60000,
+    },
+  );
 }
 
 main()
