@@ -11,7 +11,7 @@ export function DashboardLayout() {
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="min-w-0 flex-1 overflow-x-hidden">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto max-w-400 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

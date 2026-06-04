@@ -189,7 +189,7 @@ export function AdminUsersPage() {
       {usersQuery.data ? (
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-[920px] divide-y divide-slate-200 text-left text-sm">
+            <table className="min-w-230 divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Name</th>
@@ -480,7 +480,6 @@ function ResetPasswordModal({ onClose, onSuccess, user }: ResetPasswordModalProp
       confirmPassword: '',
       must_change_password: user?.role === 'employee' || user?.role === 'it_support',
     })
-    setPendingValues(null)
   }, [reset, user])
 
   function close() {

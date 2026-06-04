@@ -60,7 +60,7 @@ export function EmployeeDashboardPage() {
                 </div>
                 <BookingStatusBadge status={booking.status} />
               </div>
-              <div className="mt-4 grid min-w-0 gap-2 break-words text-sm text-slate-600 sm:grid-cols-2">
+              <div className="mt-4 grid min-w-0 gap-2 wrap-break-word text-sm text-slate-600 sm:grid-cols-2">
                 <p><span className="font-semibold text-slate-800">Client:</span> {booking.client.name}</p>
                 <p><span className="font-semibold text-slate-800">Contact:</span> {booking.client.phone || booking.client.email}</p>
                 <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.daySlot.date)}</p>

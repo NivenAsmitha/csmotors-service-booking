@@ -39,7 +39,7 @@ export function Alert({
       {...alertProps}
     >
       <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0 break-words">
+      <div className="min-w-0 wrap-break-word">
         {title ? <p className="font-semibold">{title}</p> : null}
         <div className={title ? 'mt-1' : ''}>{children}</div>
       </div>

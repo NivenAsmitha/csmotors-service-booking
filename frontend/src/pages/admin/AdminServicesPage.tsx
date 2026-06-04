@@ -90,7 +90,7 @@ export function AdminServicesPage() {
                         aria-hidden="true"
                         className="mt-0.5 size-4 shrink-0 text-brand-600"
                       />
-                      <span>{detail}</span>
+                      <span className="min-w-0 wrap-break-word">{detail}</span>
                     </li>
                   ))}
                 </ul>
@@ -244,8 +244,9 @@ function EditServiceDetailsModal({
           </div>
           <div className="mt-3 space-y-3">
             {details.map((detail, index) => (
-              <div className="flex gap-2" key={`${index}-${details.length}`}>
+              <div className="flex flex-col gap-2 sm:flex-row" key={`${index}-${details.length}`}>
                 <Input
+                  className="wrap-break-word"
                   label={`Point ${index + 1}`}
                   onChange={(event) => updateDetail(index, event.target.value)}
                   placeholder="Brake inspection"
@@ -253,7 +254,7 @@ function EditServiceDetailsModal({
                 />
                 <Button
                   aria-label={`Remove point ${index + 1}`}
-                  className="mt-8 shrink-0"
+                  className="w-full shrink-0 sm:mt-8 sm:w-auto"
                   disabled={details.length === 1}
                   onClick={() => removeDetail(index)}
                   variant="danger"

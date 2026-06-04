@@ -248,7 +248,7 @@ export function AdminSlotsPage() {
                 </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-[360px] divide-y divide-slate-200 text-left text-sm">
+                <table className="min-w-90 divide-y divide-slate-200 text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Label</th>

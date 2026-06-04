@@ -7,6 +7,7 @@ import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { ServiceDetailsModal } from '../../components/services/ServiceDetailsModal'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -16,7 +17,7 @@ import {
   getServices,
   getServiceSlots,
 } from '../../features/services/services.api'
-import type { Slot } from '../../types/service'
+import type { Service, Slot } from '../../types/service'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { getLocalDateKey } from '../../utils/dates'
 
@@ -47,6 +48,7 @@ export function BookServicePage() {
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [detailsService, setDetailsService] = useState<Service | null>(null)
   const servicesQuery = useQuery({
     queryKey: ['services'],
     queryFn: getServices,
@@ -70,6 +72,11 @@ export function BookServicePage() {
   function selectService(id: string) {
     setServiceId(id)
     setSelectedDaySlotId('')
+  }
+
+  function chooseServiceFromDetails(id: string) {
+    selectService(id)
+    setDetailsService(null)
   }
 
   function selectDate(value: string) {
@@ -152,10 +159,10 @@ export function BookServicePage() {
                 </p>
                 {service.details?.length ? (
                   <ul className="mt-2 space-y-2 text-sm text-slate-700">
-                    {service.details.map((detail) => (
+                    {service.details.slice(0, 4).map((detail) => (
                       <li className="flex gap-2" key={detail}>
                         <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-600" />
-                        <span>{detail}</span>
+                        <span className="min-w-0 wrap-break-word">{detail}</span>
                       </li>
                     ))}
                   </ul>
@@ -165,6 +172,15 @@ export function BookServicePage() {
                   </p>
                 )}
               </div>
+              {service.details && service.details.length > 4 ? (
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() => setDetailsService(service)}
+                  variant="ghost"
+                >
+                  Show More Details
+                </Button>
+              ) : null}
               <Button
                 className="mt-5 w-full"
                 onClick={() => selectService(service.id)}
@@ -336,6 +352,12 @@ export function BookServicePage() {
         open={isConfirming}
         title="Confirm service booking"
         variant="default"
+      />
+      <ServiceDetailsModal
+        isOpen={Boolean(detailsService)}
+        onChoose={chooseServiceFromDetails}
+        onClose={() => setDetailsService(null)}
+        service={detailsService}
       />
     </div>
   )
