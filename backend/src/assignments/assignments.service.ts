@@ -25,6 +25,7 @@ export class AssignmentsService {
       select: {
         id: true,
         status: true,
+        bike_number: true,
         assignment: {
           select: {
             id: true,
@@ -52,7 +53,7 @@ export class AssignmentsService {
         data: {
           booking_id: createAssignmentDto.booking_id,
           employee_id: createAssignmentDto.employee_id,
-          vehicle_ref: createAssignmentDto.vehicle_ref,
+          vehicle_ref: booking.bike_number,
           scheduled_time: createAssignmentDto.scheduled_time
             ? parseTime(createAssignmentDto.scheduled_time)
             : undefined,
@@ -69,7 +70,6 @@ export class AssignmentsService {
         metadata: {
           booking_id: assignment.booking_id,
           employee_id: assignment.employee_id,
-          vehicle_ref: assignment.vehicle_ref,
           scheduled_time: formatOptionalTime(assignment.scheduled_time),
         },
       });
@@ -104,7 +104,6 @@ export class AssignmentsService {
       },
       data: {
         employee_id: updateAssignmentDto.employee_id,
-        vehicle_ref: updateAssignmentDto.vehicle_ref,
         scheduled_time: updateAssignmentDto.scheduled_time
           ? parseTime(updateAssignmentDto.scheduled_time)
           : undefined,
@@ -120,12 +119,10 @@ export class AssignmentsService {
       metadata: {
         old: {
           employee_id: previousAssignment.employee_id,
-          vehicle_ref: previousAssignment.vehicle_ref,
           scheduled_time: formatOptionalTime(previousAssignment.scheduled_time),
         },
         new: {
           employee_id: assignment.employee_id,
-          vehicle_ref: assignment.vehicle_ref,
           scheduled_time: formatOptionalTime(assignment.scheduled_time),
         },
       },
@@ -250,6 +247,7 @@ const assignmentSelect = {
               label: true,
               start_time: true,
               end_time: true,
+              is_default: true,
               service: {
                 select: {
                   id: true,
@@ -280,6 +278,7 @@ const boardBookingSelect = {
           label: true,
           start_time: true,
           end_time: true,
+          is_default: true,
           service: {
             select: {
               name: true,
@@ -293,7 +292,6 @@ const boardBookingSelect = {
     select: {
       id: true,
       employee_id: true,
-      vehicle_ref: true,
       scheduled_time: true,
       employee: {
         select: {
@@ -324,8 +322,8 @@ function transformAssignment(assignment: AssignmentResponseSource) {
         date: dateKey(assignment.booking.daySlot.date),
         slot: {
           ...slot,
-          start_time: formatTime(slot.start_time),
-          end_time: formatTime(slot.end_time),
+          start_time: formatOptionalTime(slot.start_time),
+          end_time: formatOptionalTime(slot.end_time),
         },
       },
     },
@@ -343,15 +341,15 @@ function transformBoardBooking(booking: BoardBookingSource) {
     client: booking.client,
     service_name: slot.service.name,
     slot_label: slot.label,
-    start_time: formatTime(slot.start_time),
-    end_time: formatTime(slot.end_time),
+    is_extra: !slot.is_default,
+    start_time: formatOptionalTime(slot.start_time),
+    end_time: formatOptionalTime(slot.end_time),
     date: dateKey(booking.daySlot.date),
     assignment: booking.assignment
       ? {
           id: booking.assignment.id,
           employee_id: booking.assignment.employee_id,
           employee_name: booking.assignment.employee.name,
-          vehicle_ref: booking.assignment.vehicle_ref,
           scheduled_time: formatOptionalTime(booking.assignment.scheduled_time),
         }
       : null,

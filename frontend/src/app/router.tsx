@@ -15,10 +15,12 @@ import { LeaveReviewPage } from '../pages/client/LeaveReviewPage'
 import { MyBookingsPage } from '../pages/client/MyBookingsPage'
 import { AuditLogsPage } from '../pages/developer/AuditLogsPage'
 import { DeveloperDashboardPage } from '../pages/developer/DeveloperDashboardPage'
+import { TodayServicesDisplayPage } from '../pages/display/TodayServicesDisplayPage'
 import { EmployeeDashboardPage } from '../pages/employee/EmployeeDashboardPage'
 import { EmployeeReviewsPage } from '../pages/employee/EmployeeReviewsPage'
 import { AssignmentBoardPage } from '../pages/it-support/AssignmentBoardPage'
 import { ItSupportDashboardPage } from '../pages/it-support/ItSupportDashboardPage'
+import { ProfilePage } from '../pages/profile/ProfilePage'
 import { HomePage } from '../pages/public/HomePage'
 import { LoginPage } from '../pages/public/LoginPage'
 import { RegisterPage } from '../pages/public/RegisterPage'
@@ -40,6 +42,7 @@ export const router = createBrowserRouter([
       { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
+  { path: '/display/today-services', element: <TodayServicesDisplayPage /> },
   {
     element: (
       <ProtectedRoute
@@ -48,6 +51,19 @@ export const router = createBrowserRouter([
       />
     ),
     children: [{ path: '/change-password', element: <ChangePasswordPage /> }],
+  },
+  {
+    element: (
+      <ProtectedRoute
+        allowedRoles={['developer', 'admin', 'it_support', 'employee', 'client']}
+      />
+    ),
+    children: [
+      {
+        element: <DashboardLayout />,
+        children: [{ path: '/profile', element: <ProfilePage /> }],
+      },
+    ],
   },
   {
     element: <ProtectedRoute allowedRoles={['client']} />,

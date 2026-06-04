@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import type { Service } from '../../types/service'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -34,10 +34,6 @@ export function ServiceDetailsModal({
             {service.description}
           </p>
         ) : null}
-        <p className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-          <Clock3 aria-hidden="true" className="size-4 text-brand-600" />
-          {service.duration_minutes} minutes
-        </p>
         <section>
           <h3 className="text-sm font-bold text-slate-950">Service includes</h3>
           {service.details?.length ? (

@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { Input } from '../../components/ui/Input'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
@@ -16,6 +17,7 @@ import {
   getDayClosures,
 } from '../../features/day-closures/dayClosures.api'
 import {
+  createExtraDaySlot,
   getServiceSlots,
   getSlotsConfig,
   updateDaySlotClosed,
@@ -28,6 +30,7 @@ import { useAuthStore } from '../../stores/auth.store'
 import type { Slot } from '../../types/service'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 export function AdminSlotsPage() {
   const currentUser = useAuthStore((state) => state.user)
@@ -37,6 +40,9 @@ export function AdminSlotsPage() {
   const [date, setDate] = useState('')
   const [closureDate, setClosureDate] = useState('')
   const [closureReason, setClosureReason] = useState('')
+  const [extraServiceId, setExtraServiceId] = useState('')
+  const [extraDate, setExtraDate] = useState('')
+  const [extraCount, setExtraCount] = useState('1')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const configQuery = useQuery({
@@ -69,6 +75,7 @@ export function AdminSlotsPage() {
     [configQuery.data],
   )
   const services = configQuery.data ?? []
+  const selectedExtraService = services.find((service) => service.id === extraServiceId)
   const refreshConfig = () =>
     queryClient.invalidateQueries({ queryKey: ['slots-config'] })
   const refreshDatedSlots = () =>
@@ -103,6 +110,21 @@ export function AdminSlotsPage() {
       await Promise.all([refreshClosures(), refreshDatedSlots()])
     },
   })
+  const createExtraSlotMutation = useMutation({
+    mutationFn: createExtraDaySlot,
+    onSuccess: async () => {
+      setSuccessMessage(
+        `${Number(extraCount)} extra slots added successfully. Each slot allows ${selectedExtraService?.max_bookings_per_slot ?? 1} booking${(selectedExtraService?.max_bookings_per_slot ?? 1) === 1 ? '' : 's'}.`,
+      )
+      setExtraServiceId('')
+      setExtraDate('')
+      setExtraCount('1')
+      await Promise.all([
+        refreshConfig(),
+        queryClient.invalidateQueries({ queryKey: ['service-slots'] }),
+      ])
+    },
+  })
   const deleteClosureMutation = useMutation({
     mutationFn: deleteDayClosure,
     onSuccess: async () => {
@@ -113,6 +135,7 @@ export function AdminSlotsPage() {
   const mutationError =
     globalTimeModeMutation.error ??
     closedMutation.error ??
+    createExtraSlotMutation.error ??
     createClosureMutation.error ??
     deleteClosureMutation.error
 
@@ -132,6 +155,20 @@ export function AdminSlotsPage() {
     setConfirmation({ kind: 'close-day' })
   }
 
+  function submitExtraSlot() {
+    if (
+      isReadOnly ||
+      !extraServiceId ||
+      !extraDate ||
+      Number(extraCount) < 1 ||
+      Number(extraCount) > 20
+    ) {
+      return
+    }
+
+    setConfirmation({ kind: 'extra-slot' })
+  }
+
   function confirmAction() {
     if (!confirmation) {
       return
@@ -139,6 +176,13 @@ export function AdminSlotsPage() {
 
     if (confirmation.kind === 'global-time-mode') {
       globalTimeModeMutation.mutate(confirmation.showTime)
+    } else if (confirmation.kind === 'extra-slot') {
+      createExtraSlotMutation.mutate({
+        service_id: extraServiceId,
+        date: extraDate,
+        extra_count: Number(extraCount),
+        show_time_override: null,
+      })
     } else if (confirmation.kind === 'slot') {
       closedMutation.mutate({
         id: confirmation.slot.day_slot_id,
@@ -233,6 +277,58 @@ export function AdminSlotsPage() {
       </PageSection>
 
       <PageSection
+        description="Add extra booking slots to the end of the selected service date. These slots will appear as Extra Slot 1, Extra Slot 2, etc."
+        title="Add Extra Slots"
+      >
+        <div className="grid gap-4 md:grid-cols-3">
+          <div>
+            <Select
+              disabled={isReadOnly}
+              label="Service"
+              onChange={(event) => setExtraServiceId(event.target.value)}
+              options={[
+                { label: 'Select a service', value: '' },
+                ...services.map((service) => ({ label: service.name, value: service.id })),
+              ]}
+              value={extraServiceId}
+            />
+            {selectedExtraService ? (
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                Each extra slot allows {selectedExtraService.max_bookings_per_slot}{' '}
+                booking{selectedExtraService.max_bookings_per_slot === 1 ? '' : 's'}.
+              </p>
+            ) : null}
+          </div>
+          <DateInput label="Date" onChange={setExtraDate} value={extraDate} />
+          <Input
+            disabled={isReadOnly}
+            label="Number of extra slots"
+            max={20}
+            min={1}
+            onChange={(event) => setExtraCount(event.target.value)}
+            type="number"
+            value={extraCount}
+          />
+        </div>
+        <div className="mt-5 flex justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            disabled={
+              isReadOnly ||
+              createExtraSlotMutation.isPending ||
+              !extraServiceId ||
+              !extraDate ||
+              Number(extraCount) < 1 ||
+              Number(extraCount) > 20
+            }
+            onClick={submitExtraSlot}
+          >
+            Add Extra Slots
+          </Button>
+        </div>
+      </PageSection>
+
+      <PageSection
         description="Exact times remain visible here for internal scheduling. Customer visibility is controlled by the global setting above."
         title="Default Slot Configuration"
       >
@@ -258,7 +354,7 @@ export function AdminSlotsPage() {
                   <tbody className="divide-y divide-slate-100">
                     {service.timeSlots.map((slot) => (
                       <tr key={slot.id}>
-                        <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">{slot.label}</td>
+                        <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">{formatSlotLabel(slot.label)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-slate-600">{slot.start_time} - {slot.end_time}</td>
                       </tr>
                     ))}
@@ -296,14 +392,15 @@ export function AdminSlotsPage() {
               <article className="rounded-xl border border-slate-200 p-4" key={slot.day_slot_id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-slate-900">{slot.label}</h3>
+                    <h3 className="font-bold text-slate-900">{formatSlotLabel(slot.label)}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
                       <Clock3 aria-hidden="true" className="size-3.5" />
-                      {exactTime ? `${exactTime.start_time} - ${exactTime.end_time}` : 'Exact time unavailable'}
+                      {exactTime?.start_time && exactTime.end_time ? `${exactTime.start_time} - ${exactTime.end_time}` : 'No fixed time'}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">{formatDate(slot.date)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {slot.is_extra ? <Badge variant="info">Extra Slot</Badge> : null}
                     <Badge variant={slot.display_time ? 'success' : 'warning'}>
                       {slot.display_time ? 'Active Time' : 'Hidden Time'}
                     </Badge>
@@ -390,6 +487,7 @@ export function AdminSlotsPage() {
         isConfirming={
           closedMutation.isPending ||
           globalTimeModeMutation.isPending ||
+          createExtraSlotMutation.isPending ||
           createClosureMutation.isPending ||
           deleteClosureMutation.isPending
         }
@@ -397,7 +495,19 @@ export function AdminSlotsPage() {
         onClose={() => setConfirmation(null)}
         onConfirm={confirmAction}
         title={getConfirmationCopy(confirmation).title}
-      />
+      >
+        {confirmation?.kind === 'extra-slot' ? (
+          <dl className="grid gap-2 sm:grid-cols-2">
+            <SummaryItem label="Service" value={services.find((service) => service.id === extraServiceId)?.name ?? 'Selected service'} />
+            <SummaryItem label="Date" value={extraDate ? formatDate(extraDate) : ''} />
+            <SummaryItem label="Number of extra slots" value={extraCount} />
+            <SummaryItem
+              label="Capacity per extra slot"
+              value={String(selectedExtraService?.max_bookings_per_slot ?? '-')}
+            />
+          </dl>
+        ) : null}
+      </ConfirmDialog>
     </div>
   )
 }
@@ -459,6 +569,7 @@ function AvailabilityBadge({ slot }: { slot: Slot }) {
 
 type Confirmation =
   | { kind: 'global-time-mode'; showTime: boolean }
+  | { kind: 'extra-slot' }
   | { kind: 'slot'; slot: Slot }
   | { kind: 'close-day' }
   | { kind: 'reopen-day'; date: string }
@@ -478,8 +589,16 @@ function getConfirmationCopy(confirmation: Confirmation | null) {
     const action = confirmation.slot.is_closed ? 'open' : 'close'
     return {
       confirmLabel: `${action === 'open' ? 'Open' : 'Close'} slot`,
-      description: `${action === 'open' ? 'Open' : 'Close'} ${confirmation.slot.label} for ${formatDate(confirmation.slot.date)}? This changes customer availability immediately.`,
+      description: `${action === 'open' ? 'Open' : 'Close'} ${formatSlotLabel(confirmation.slot.label)} for ${formatDate(confirmation.slot.date)}? This changes customer availability immediately.`,
       title: `${action === 'open' ? 'Open' : 'Close'} slot`,
+    }
+  }
+
+  if (confirmation?.kind === 'extra-slot') {
+    return {
+      confirmLabel: 'Yes, Add Slots',
+      description: 'Are you sure you want to add these extra slots?',
+      title: 'Add Extra Slots',
     }
   }
 
@@ -511,6 +630,17 @@ function ErrorText({ error, fallback }: { error: unknown; fallback: string }) {
     <Alert className="mt-4" variant="error">
       {getApiErrorMessage(error, fallback)}
     </Alert>
+  )
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-0.5 font-semibold text-slate-900">{value || '-'}</dd>
+    </div>
   )
 }
 

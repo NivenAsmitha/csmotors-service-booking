@@ -19,8 +19,9 @@ export type Slot = {
   booked_count: number
   available: boolean
   is_closed: boolean
+  is_extra?: boolean
   show_time_override?: boolean | null
   reason?: string
-  start_time?: string
-  end_time?: string
+  start_time?: string | null
+  end_time?: string | null
 }

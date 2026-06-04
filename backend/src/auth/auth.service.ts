@@ -337,6 +337,17 @@ export class AuthService {
       },
     });
 
+    await this.auditService.log({
+      userId: user.id,
+      action: 'USER_PASSWORD_CHANGED',
+      entity: 'user',
+      entityId: user.id,
+      metadata: {
+        email: user.email,
+        role: user.role,
+      },
+    });
+
     return {
       user: withoutPasswordHash(updatedUser),
     };

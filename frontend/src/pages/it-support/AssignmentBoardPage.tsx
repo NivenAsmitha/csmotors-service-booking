@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Pencil, Plus, Wrench } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
+import { TodayServicesDisplayControl } from '../../components/display/TodayServicesDisplayControl'
+import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Input } from '../../components/ui/Input'
@@ -17,16 +19,16 @@ import {
   type AssignmentBoardItem,
   type AssignmentPayload,
 } from '../../features/assignments/assignments.api'
-import { getUsers } from '../../features/users/users.api'
+import { getActiveEmployees, type ActiveEmployee } from '../../features/users/users.api'
 import { updateBookingStatus } from '../../features/bookings/bookings.api'
 import { useAuthStore } from '../../stores/auth.store'
 import type { BookingStatus } from '../../types/booking'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate, getLocalDateKey } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 const assignmentSchema = z.object({
   employee_id: z.string().min(1, 'Select an employee'),
-  vehicle_ref: z.string().trim().min(1, 'Bike reference is required'),
   scheduled_time: z
     .string()
     .refine(
@@ -60,16 +62,10 @@ export function AssignmentBoardPage() {
     queryFn: () => getAssignmentBoard(date),
   })
   const usersQuery = useQuery({
-    queryKey: ['users'],
-    queryFn: getUsers,
+    queryKey: ['active-employees'],
+    queryFn: getActiveEmployees,
   })
-  const employees = useMemo(
-    () =>
-      (usersQuery.data ?? []).filter(
-        (user) => user.role === 'employee' && user.is_active,
-      ),
-    [usersQuery.data],
-  )
+  const employees = usersQuery.data ?? []
   const statusMutation = useMutation({
     mutationFn: ({ bookingId, status }: { bookingId: string; status: BookingStatus }) =>
       updateBookingStatus(bookingId, status),
@@ -91,7 +87,7 @@ export function AssignmentBoardPage() {
           Assignment Board
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Assign service work, bike references, and scheduled workshop times.
+          Assign service work and scheduled workshop times.
         </p>
       </section>
 
@@ -108,6 +104,8 @@ export function AssignmentBoardPage() {
       {statusMutation.isError ? (
         <ErrorText error={statusMutation.error} fallback="Unable to update service status" />
       ) : null}
+
+      <TodayServicesDisplayControl />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <label className="block max-w-xs">
@@ -157,17 +155,24 @@ export function AssignmentBoardPage() {
             </div>
             <div className="mt-4 grid min-w-0 gap-2 wrap-break-word text-sm text-slate-600 sm:grid-cols-2">
               <p><span className="font-semibold text-slate-800">Service:</span> {booking.service_name}</p>
-              <p><span className="font-semibold text-slate-800">Slot:</span> {booking.slot_label}</p>
+              <p><span className="font-semibold text-slate-800">Slot:</span> {formatSlotLabel(booking.slot_label)}</p>
               <p><span className="font-semibold text-slate-800">Date:</span> {formatDate(booking.date)}</p>
-              <p className="rounded-lg bg-slate-950 px-3 py-2 font-semibold text-white"><span className="text-slate-300">Internal time:</span> {booking.start_time} - {booking.end_time}</p>
+              <p className="rounded-lg bg-slate-950 px-3 py-2 font-semibold text-white">
+                <span className="text-slate-300">Internal time:</span>{' '}
+                {booking.start_time && booking.end_time
+                  ? `${booking.start_time} - ${booking.end_time}`
+                  : 'No fixed time'}
+              </p>
               <p><span className="font-semibold text-slate-800">Bike number:</span> {booking.bike_number || 'Not provided'}</p>
               <p><span className="font-semibold text-slate-800">Bike model:</span> {booking.bike_model || 'Not provided'}</p>
             </div>
+            {booking.is_extra ? (
+              <Badge className="mt-3" variant="info">Extra Slot</Badge>
+            ) : null}
             <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
               {booking.assignment ? (
                 <>
                   <p><span className="font-semibold text-slate-800">Employee:</span> {booking.assignment.employee_name}</p>
-                  <p className="mt-1"><span className="font-semibold text-slate-800">Bike reference:</span> {booking.assignment.vehicle_ref || 'Not provided'}</p>
                   <p className="mt-1"><span className="font-semibold text-slate-800">Scheduled:</span> {booking.assignment.scheduled_time || 'Not set'}</p>
                 </>
               ) : (
@@ -233,7 +238,7 @@ export function AssignmentBoardPage() {
         onClose={() => setSelectedBooking(null)}
         onSuccess={async () => {
           setSelectedBooking(null)
-          setSuccessMessage('Assignment saved successfully.')
+          setSuccessMessage('Employee assigned. Today Services Display will update automatically.')
           await queryClient.invalidateQueries({ queryKey: ['assignment-board'] })
         }}
       />
@@ -257,7 +262,7 @@ export function AssignmentBoardPage() {
 
 type AssignmentModalProps = {
   booking: AssignmentBoardItem | null
-  employees: { id: string; name: string }[]
+  employees: ActiveEmployee[]
   onClose: () => void
   onSuccess: () => Promise<void>
 }
@@ -276,7 +281,7 @@ function AssignmentModal({
     reset,
   } = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentSchema),
-    defaultValues: { employee_id: '', vehicle_ref: '', scheduled_time: '' },
+    defaultValues: { employee_id: '', scheduled_time: '' },
   })
   const mutation = useMutation({
     mutationFn: (values: AssignmentFormValues) => {
@@ -286,7 +291,6 @@ function AssignmentModal({
 
       const payload: AssignmentPayload = {
         employee_id: values.employee_id,
-        vehicle_ref: values.vehicle_ref,
         ...(values.scheduled_time
           ? { scheduled_time: values.scheduled_time }
           : {}),
@@ -306,7 +310,6 @@ function AssignmentModal({
   useEffect(() => {
     reset({
       employee_id: booking?.assignment?.employee_id ?? '',
-      vehicle_ref: booking?.assignment?.vehicle_ref ?? '',
       scheduled_time: booking?.assignment?.scheduled_time ?? '',
     })
   }, [booking, reset])
@@ -334,18 +337,27 @@ function AssignmentModal({
           options={[
             { label: 'Select an employee', value: '' },
             ...employees.map((employee) => ({
-              label: employee.name,
+              label: employee.name || 'Unnamed employee',
               value: employee.id,
             })),
           ]}
           {...register('employee_id')}
         />
-        <Input
-          error={errors.vehicle_ref?.message}
-          label="Bike reference"
-          placeholder="WP ABC-1234"
-          {...register('vehicle_ref')}
-        />
+        {employees.length === 0 ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            No active employees found. Please create an employee first.
+          </p>
+        ) : null}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+          <p>
+            <span className="font-semibold text-slate-800">Bike number:</span>{' '}
+            {booking?.bike_number || 'Not provided'}
+          </p>
+          <p className="mt-1">
+            <span className="font-semibold text-slate-800">Bike model:</span>{' '}
+            {booking?.bike_model || 'Not provided'}
+          </p>
+        </div>
         <Input
           error={errors.scheduled_time?.message}
           label="Scheduled time (optional)"
@@ -363,9 +375,10 @@ function AssignmentModal({
         </div>
       </form>
       <ConfirmDialog
-        confirmText={booking?.assignment ? 'Save assignment changes' : 'Create assignment'}
+        cancelText="No"
+        confirmText="Yes, Assign"
         loading={mutation.isPending}
-        message={`${booking?.assignment ? 'Save changes to' : 'Create'} this employee assignment?`}
+        message={`Are you sure you want to assign this booking to ${selectedEmployeeName(employees, pendingValues?.employee_id)}?`}
         onCancel={() => setPendingValues(null)}
         onConfirm={() => {
           if (pendingValues) {
@@ -373,11 +386,25 @@ function AssignmentModal({
           }
         }}
         open={Boolean(pendingValues)}
-        title={booking?.assignment ? 'Confirm assignment changes' : 'Confirm assignment'}
+        title="Confirm Assignment"
         variant="default"
-      />
+      >
+        <div className="space-y-1">
+          <p><span className="font-semibold">Client:</span> {booking?.client.name ?? '-'}</p>
+          <p><span className="font-semibold">Service:</span> {booking?.service_name ?? '-'}</p>
+          <p><span className="font-semibold">Date:</span> {booking ? formatDate(booking.date) : '-'}</p>
+          <p><span className="font-semibold">Slot:</span> {formatSlotLabel(booking?.slot_label)}</p>
+          <p><span className="font-semibold">Bike number:</span> {booking?.bike_number || 'Not provided'}</p>
+          <p><span className="font-semibold">Bike model:</span> {booking?.bike_model || 'Not provided'}</p>
+          <p><span className="font-semibold">Employee:</span> {selectedEmployeeName(employees, pendingValues?.employee_id)}</p>
+        </div>
+      </ConfirmDialog>
     </Modal>
   )
+}
+
+function selectedEmployeeName(employees: ActiveEmployee[], employeeId?: string) {
+  return employees.find((employee) => employee.id === employeeId)?.name ?? 'this employee'
 }
 
 function formatStatus(status?: BookingStatus) {

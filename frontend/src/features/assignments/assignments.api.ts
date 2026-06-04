@@ -6,7 +6,6 @@ import type {
 
 export type AssignmentPayload = {
   employee_id: string
-  vehicle_ref: string
   scheduled_time?: string
 }
 
@@ -22,14 +21,14 @@ export type AssignmentBoardItem = {
   client: BookingClient
   service_name: string
   slot_label: string
-  start_time: string
-  end_time: string
+  is_extra?: boolean
+  start_time?: string | null
+  end_time?: string | null
   date: string
   assignment: {
     id: string
     employee_id: string
     employee_name: string
-    vehicle_ref?: string | null
     scheduled_time?: string | null
   } | null
 }
@@ -51,8 +50,9 @@ export type EmployeeAssignment = {
       date: string
       slot: {
         label: string
-        start_time: string
-        end_time: string
+        start_time?: string | null
+        end_time?: string | null
+        is_default?: boolean
         service: {
           id: string
           name: string

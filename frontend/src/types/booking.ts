@@ -14,8 +14,9 @@ export type BookingSlot = {
   show_time: boolean
   display_time: boolean
   display_label: string
-  start_time?: string
-  end_time?: string
+  start_time?: string | null
+  end_time?: string | null
+  is_default?: boolean
   service: Service
 }
 

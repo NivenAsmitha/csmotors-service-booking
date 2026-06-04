@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   MessageSquareText,
   ListChecks,
+  UserCircle,
   UserRoundCog,
   Users,
   X,
@@ -28,6 +29,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     { label: 'Bookings', to: '/admin/bookings', icon: BookOpen },
     { label: 'Reports', to: '/admin/reports', icon: FileChartColumn },
     { label: 'Audit Logs', to: '/developer/audit-logs', icon: ClipboardList },
+    { label: 'Profile', to: '/profile', icon: UserCircle },
   ],
   admin: [
     { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
@@ -37,19 +39,23 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     { label: 'Bookings', to: '/admin/bookings', icon: BookOpen },
     { label: 'Reviews', to: '/admin/reviews', icon: MessageSquareText },
     { label: 'Reports', to: '/admin/reports', icon: FileChartColumn },
+    { label: 'Profile', to: '/profile', icon: UserCircle },
   ],
   it_support: [
     { label: 'Dashboard', to: '/it-support/dashboard', icon: LayoutDashboard },
     { label: 'Assignment Board', to: '/it-support/assignments', icon: UserRoundCog },
+    { label: 'Profile', to: '/profile', icon: UserCircle },
   ],
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
     { label: 'My Reviews', to: '/employee/reviews', icon: MessageSquareText },
+    { label: 'Profile', to: '/profile', icon: UserCircle },
   ],
   client: [
     { label: 'Dashboard', to: '/client/dashboard', icon: LayoutDashboard },
     { label: 'Book Service', to: '/client/book-service', icon: CalendarClock },
     { label: 'My Bookings', to: '/client/bookings', icon: BookOpen },
+    { label: 'Profile', to: '/profile', icon: UserCircle },
   ],
 }
 

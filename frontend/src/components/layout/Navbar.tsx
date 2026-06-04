@@ -1,16 +1,13 @@
 import { LogOut, Menu } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 
-export function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
-  const logout = useAuthStore((state) => state.logout)
+type NavbarProps = {
+  onLogoutClick: () => void
+  onMenuClick: () => void
+}
 
-  function handleLogout() {
-    logout()
-    navigate('/login')
-  }
+export function Navbar({ onLogoutClick, onMenuClick }: NavbarProps) {
+  const user = useAuthStore((state) => state.user)
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
@@ -37,7 +34,7 @@ export function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
       <button
         className="ml-3 inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-        onClick={handleLogout}
+        onClick={onLogoutClick}
         type="button"
       >
         <LogOut aria-hidden="true" className="size-4" />

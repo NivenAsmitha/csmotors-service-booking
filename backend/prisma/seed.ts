@@ -88,7 +88,7 @@ const services = [
     duration_minutes: 690,
     max_bookings_per_slot: 1,
     is_active: true,
-    slots: [['Super Service Full Day', '08:00', '19:30']],
+    slots: [['Slot 1', '08:00', '19:30']],
   },
 ] as const;
 

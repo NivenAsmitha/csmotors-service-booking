@@ -89,7 +89,7 @@ export class BookingsController {
     return this.bookingsService.cancel(currentUser.id, id);
   }
 
-  @Roles(UserRole.employee, UserRole.it_support, UserRole.admin)
+  @Roles(UserRole.it_support, UserRole.admin)
   @ApiOperation({ summary: 'Update a booking status' })
   @Patch(':id/status')
   updateStatus(

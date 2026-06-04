@@ -13,6 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { TodayServicesDisplayControl } from '../../components/display/TodayServicesDisplayControl'
 import { getSummaryReport } from '../../features/reports/reports.api'
 import { useAuthStore } from '../../stores/auth.store'
 import { getApiErrorMessage } from '../../utils/api-error'
@@ -74,6 +75,8 @@ export function AdminDashboardPage() {
           Review the current service-booking activity and open common workflows.
         </p>
       </section>
+
+      <TodayServicesDisplayControl />
 
       <section>
         <h2 className="text-lg font-bold text-slate-900">Quick actions</h2>

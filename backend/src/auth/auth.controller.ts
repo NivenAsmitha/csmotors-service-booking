@@ -1,7 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -65,6 +67,13 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change the authenticated user password' })
+  @Roles(
+    UserRole.developer,
+    UserRole.admin,
+    UserRole.it_support,
+    UserRole.employee,
+    UserRole.client,
+  )
   @Post('change-password')
   changePassword(
     @CurrentUser() user: AuthenticatedUser,

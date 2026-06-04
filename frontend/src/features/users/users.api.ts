@@ -1,5 +1,6 @@
 import api from '../../api/axios'
 import type { InternalUserRole, User } from '../../types/user'
+import type { AuthUser } from '../../types/auth'
 
 export type CreateUserPayload = {
   name: string
@@ -20,6 +21,31 @@ export type ResetUserPasswordPayload = {
   newPassword: string
   must_change_password?: boolean
 }
+
+export type UpdateMyProfilePayload = {
+  name?: string
+  email?: string
+  phone?: string
+}
+
+export type UpdateMyProfileResponse = {
+  message: string
+  user: AuthUser
+}
+
+export type ChangeMyPasswordPayload = {
+  old_password: string
+  new_password: string
+}
+
+export type ChangeMyPasswordResponse = {
+  user: AuthUser
+}
+
+export type ActiveEmployee = Pick<
+  User,
+  'id' | 'name' | 'email' | 'phone' | 'role' | 'is_active'
+>
 
 export async function getUsers() {
   const response = await api.get<User[]>('/users')
@@ -51,5 +77,28 @@ export async function resetUserPassword(
   payload: ResetUserPasswordPayload,
 ) {
   const response = await api.patch<User>(`/users/${id}/password`, payload)
+  return response.data
+}
+
+export async function getMyProfile() {
+  const response = await api.get<AuthUser>('/users/me')
+  return response.data
+}
+
+export async function updateMyProfile(payload: UpdateMyProfilePayload) {
+  const response = await api.patch<UpdateMyProfileResponse>('/users/me', payload)
+  return response.data
+}
+
+export async function changeMyPassword(payload: ChangeMyPasswordPayload) {
+  const response = await api.post<ChangeMyPasswordResponse>(
+    '/auth/change-password',
+    payload,
+  )
+  return response.data
+}
+
+export async function getActiveEmployees() {
+  const response = await api.get<ActiveEmployee[]>('/users/employees/active')
   return response.data
 }

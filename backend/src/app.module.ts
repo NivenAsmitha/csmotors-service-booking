@@ -17,6 +17,7 @@ import { ReportsModule } from './reports/reports.module';
 import { DayClosuresModule } from './day-closures/day-closures.module';
 import { AuditModule } from './audit/audit.module';
 import { SettingsModule } from './settings/settings.module';
+import { DisplayModule } from './display/display.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SettingsModule } from './settings/settings.module';
     DayClosuresModule,
     AuditModule,
     SettingsModule,
+    DisplayModule,
   ],
   controllers: [AppController],
   providers: [

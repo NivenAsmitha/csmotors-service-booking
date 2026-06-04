@@ -52,8 +52,8 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
 const roleOptions = [
   { label: 'Admin', value: 'admin' },
-  { label: 'Employee', value: 'employee' },
   { label: 'IT Support', value: 'it_support' },
+  { label: 'Employee', value: 'employee' },
 ]
 const roleFilterOptions = [
   { label: 'All roles', value: 'all' },
@@ -96,7 +96,9 @@ export function AdminUsersPage() {
   const users = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
 
-    return (usersQuery.data ?? []).filter((user) => {
+    return (usersQuery.data ?? [])
+      .filter((user) => isVisibleManagementUser(currentUser?.role, user))
+      .filter((user) => {
       const matchesSearch =
         !normalizedSearch ||
         user.name.toLowerCase().includes(normalizedSearch) ||
@@ -108,7 +110,8 @@ export function AdminUsersPage() {
 
       return matchesSearch && matchesRole && matchesActive
     })
-  }, [activeFilter, roleFilter, search, usersQuery.data])
+      .sort((firstUser, secondUser) => roleSortOrder[firstUser.role] - roleSortOrder[secondUser.role])
+  }, [activeFilter, currentUser?.role, roleFilter, search, usersQuery.data])
 
   return (
     <div className="space-y-6">
@@ -134,7 +137,7 @@ export function AdminUsersPage() {
 
       {isDeveloper ? (
         <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
-          Developer access: create internal accounts and reset passwords. Other user changes remain read-only.
+          Developer access: manage admin, employee, IT Support, and client accounts. Developer accounts are protected.
         </p>
       ) : null}
       {successMessage ? (
@@ -227,21 +230,8 @@ export function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      {isDeveloper ? (
-                        user.role !== 'developer' || user.id === currentUser?.id ? (
-                          <Button
-                            className="px-3 py-2"
-                            onClick={() => setResetPasswordTarget(user)}
-                            variant="secondary"
-                          >
-                            <KeyRound aria-hidden="true" className="size-3.5" />
-                            Reset Password
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-slate-500">Protected developer</span>
-                        )
-                      ) : (
-                        <div className="flex gap-2">
+                      {canManageUser(currentUser?.role, user) ? (
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             className="px-3 py-2"
                             onClick={() => setEditTarget(user)}
@@ -260,7 +250,21 @@ export function AdminUsersPage() {
                               Deactivate
                             </Button>
                           ) : null}
+                          {canResetUserPassword(currentUser?.role, user) ? (
+                            <Button
+                              className="px-3 py-2"
+                              onClick={() => setResetPasswordTarget(user)}
+                              variant="secondary"
+                            >
+                              <KeyRound aria-hidden="true" className="size-3.5" />
+                              Reset Password
+                            </Button>
+                          ) : null}
                         </div>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-500">
+                          {protectedUserLabel(currentUser?.role, user)}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -558,6 +562,7 @@ function EditUserModal({
   user,
 }: EditUserModalProps) {
   const queryClient = useQueryClient()
+  const [pendingValues, setPendingValues] = useState<EditUserForm | null>(null)
   const {
     formState: { errors },
     handleSubmit,
@@ -582,10 +587,13 @@ function EditUserModal({
         name: values.name,
         phone: values.phone,
         is_active: values.is_active,
-        ...(currentUserRole === 'developer' ? { role: values.role } : {}),
+        ...(currentUserRole === 'developer' && isInternalRole(user.role)
+          ? { role: values.role }
+          : {}),
       })
     },
     onSuccess: async () => {
+      setPendingValues(null)
       onSuccess()
       await queryClient.invalidateQueries({ queryKey: ['users'] })
     },
@@ -604,6 +612,7 @@ function EditUserModal({
 
   function close() {
     if (!mutation.isPending) {
+      setPendingValues(null)
       onClose()
     }
   }
@@ -615,7 +624,7 @@ function EditUserModal({
           {getApiErrorMessage(mutation.error, 'Unable to update user')}
         </p>
       ) : null}
-      <form className="space-y-4" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+      <form className="space-y-4" onSubmit={handleSubmit(setPendingValues)}>
         <Input error={errors.name?.message} label="Name" placeholder="Full name" {...register('name')} />
         <Input
           error={errors.phone?.message}
@@ -627,7 +636,7 @@ function EditUserModal({
           <input className="size-4 accent-brand-600" type="checkbox" {...register('is_active')} />
           <span className="text-sm font-semibold text-slate-700">Active user</span>
         </label>
-        {currentUserRole === 'developer' ? (
+        {currentUserRole === 'developer' && user && isInternalRole(user.role) ? (
           <Select
             error={errors.role?.message}
             label="Role"
@@ -644,8 +653,70 @@ function EditUserModal({
           </Button>
         </div>
       </form>
+      <ConfirmDialog
+        confirmText="Save changes"
+        loading={mutation.isPending}
+        message={`Save changes for ${user?.name ?? 'this user'}?`}
+        onCancel={() => setPendingValues(null)}
+        onConfirm={() => {
+          if (pendingValues) {
+            mutation.mutate(pendingValues)
+          }
+        }}
+        open={Boolean(pendingValues)}
+        title="Confirm user update"
+        variant="default"
+      />
     </Modal>
   )
+}
+
+function canManageUser(currentRole: string | undefined, user: User) {
+  if (currentRole === 'developer') {
+    return user.role !== 'developer'
+  }
+
+  if (currentRole === 'admin') {
+    return user.role === 'employee' || user.role === 'it_support' || user.role === 'client'
+  }
+
+  return false
+}
+
+function canResetUserPassword(currentRole: string | undefined, user: User) {
+  return currentRole === 'developer' && user.role !== 'developer'
+}
+
+function protectedUserLabel(currentRole: string | undefined, user: User) {
+  if (user.role === 'developer') {
+    return 'Protected'
+  }
+
+  if (currentRole === 'admin' && user.role === 'admin') {
+    return 'Developer only'
+  }
+
+  return 'Protected'
+}
+
+function isVisibleManagementUser(currentRole: string | undefined, user: User) {
+  if (currentRole === 'developer') {
+    return user.role === 'admin' || user.role === 'it_support' || user.role === 'employee' || user.role === 'client'
+  }
+
+  if (currentRole === 'admin') {
+    return user.role === 'it_support' || user.role === 'employee' || user.role === 'client'
+  }
+
+  return false
+}
+
+const roleSortOrder: Record<User['role'], number> = {
+  admin: 1,
+  it_support: 2,
+  employee: 3,
+  client: 4,
+  developer: 5,
 }
 
 function isInternalRole(role: User['role']): role is InternalUserRole {

@@ -402,8 +402,8 @@ export class BookingsService {
             serviceName: slot.service.name,
             bookingDate: dateKey(booking.daySlot.date),
             slotLabel: slot.label,
-            startTime: formatTime(slot.start_time),
-            endTime: formatTime(slot.end_time),
+            startTime: formatOptionalTime(slot.start_time) ?? 'No fixed time',
+            endTime: formatOptionalTime(slot.end_time) ?? '',
             bikeNumber: booking.bike_number,
             bikeModel: booking.bike_model,
             notes: booking.notes,
@@ -627,8 +627,8 @@ function transformBooking(booking: BookingResponseSource, isClient: boolean) {
     booking.daySlot.show_time_override,
     slot.show_time,
   );
-  const formattedStartTime = formatTime(start_time);
-  const formattedEndTime = formatTime(end_time);
+  const formattedStartTime = formatOptionalTime(start_time);
+  const formattedEndTime = formatOptionalTime(end_time);
 
   return {
     ...booking,
@@ -638,10 +638,10 @@ function transformBooking(booking: BookingResponseSource, isClient: boolean) {
       slot: {
         ...slotWithoutTimes,
         display_time: displayTime,
-        display_label: displayTime
+        display_label: displayTime && formattedStartTime && formattedEndTime
           ? `${slot.label} (${formattedStartTime} - ${formattedEndTime})`
           : slot.label,
-        ...(!isClient || displayTime
+        ...((!isClient || displayTime) && formattedStartTime && formattedEndTime
           ? {
               start_time: formattedStartTime,
               end_time: formattedEndTime,
@@ -667,6 +667,10 @@ function todayKey() {
 
 function formatTime(time: Date) {
   return time.toISOString().slice(11, 16);
+}
+
+function formatOptionalTime(time: Date | null) {
+  return time ? formatTime(time) : null;
 }
 
 function resolveDisplayTime(

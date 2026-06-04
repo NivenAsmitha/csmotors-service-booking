@@ -20,6 +20,7 @@ import {
 import type { Service, Slot } from '../../types/service'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { getLocalDateKey } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 function getUnavailableLabel(slot: Slot) {
   if (slot.reason === 'day_closed') {
@@ -150,16 +151,13 @@ export function BookServicePage() {
                   {service.description}
                 </p>
               ) : null}
-              <p className="mt-2 text-xs font-semibold text-slate-500">
-                {service.duration_minutes} minutes
-              </p>
               <div className="mt-4 flex-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Includes
                 </p>
                 {service.details?.length ? (
                   <ul className="mt-2 space-y-2 text-sm text-slate-700">
-                    {service.details.slice(0, 4).map((detail) => (
+                    {service.details.slice(0, 3).map((detail) => (
                       <li className="flex gap-2" key={detail}>
                         <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-600" />
                         <span className="min-w-0 wrap-break-word">{detail}</span>
@@ -172,14 +170,14 @@ export function BookServicePage() {
                   </p>
                 )}
               </div>
-              {service.details && service.details.length > 4 ? (
-                <Button
-                  className="mt-4 w-full"
+              {service.details && service.details.length > 3 ? (
+                <button
+                  className="mt-2 inline-flex self-start text-sm font-semibold text-brand-700 transition hover:text-brand-800 hover:underline"
                   onClick={() => setDetailsService(service)}
-                  variant="ghost"
+                  type="button"
                 >
-                  Show More Details
-                </Button>
+                  View all details
+                </button>
               ) : null}
               <Button
                 className="mt-5 w-full"
@@ -255,7 +253,7 @@ export function BookServicePage() {
               type="button"
             >
               <span className="flex flex-wrap items-start justify-between gap-3">
-                <span className="font-semibold">{slot.label}</span>
+                <span className="font-semibold">{formatSlotLabel(slot.label)}</span>
                 <SlotAvailabilityBadge slot={slot} />
               </span>
               {slot.display_time && slot.start_time && slot.end_time ? (
@@ -343,7 +341,7 @@ export function BookServicePage() {
             <p>Confirm this service booking?</p>
             <p><span className="font-semibold">Service:</span> {selectedService?.name}</p>
             <p><span className="font-semibold">Date:</span> {date}</p>
-            <p><span className="font-semibold">Slot:</span> {selectedSlot?.label}</p>
+            <p><span className="font-semibold">Slot:</span> {formatSlotLabel(selectedSlot?.label)}</p>
             <p><span className="font-semibold">Bike:</span> {bikeNumber.trim()} | {bikeModel.trim()}</p>
           </div>
         }

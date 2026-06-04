@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -10,6 +10,7 @@ import { type AuthenticatedUser } from '../auth/auth.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CreateExtraDaySlotDto } from './dto/create-extra-day-slot.dto';
 import { UpdateDaySlotCloseDto } from './dto/update-day-slot-close.dto';
 import { UpdateDaySlotTimeModeDto } from './dto/update-day-slot-time-mode.dto';
 import { UpdateSlotTimeModeDto } from './dto/update-slot-time-mode.dto';
@@ -37,6 +38,20 @@ export class SlotsController {
   @Get('slots/config')
   findConfig() {
     return this.slotsService.findConfig();
+  }
+
+  @ApiBearerAuth()
+  @Roles(UserRole.admin)
+  @ApiOperation({ summary: 'Create an extra slot for a specific date' })
+  @Post('day-slots/extra')
+  createExtraDaySlot(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() createExtraDaySlotDto: CreateExtraDaySlotDto,
+  ) {
+    return this.slotsService.createExtraDaySlot(
+      currentUser.id,
+      createExtraDaySlotDto,
+    );
   }
 
   @ApiBearerAuth()

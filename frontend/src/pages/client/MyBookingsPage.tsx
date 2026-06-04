@@ -15,6 +15,7 @@ import {
 } from '../../features/bookings/bookings.api'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate, getLocalDateKey } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 export function MyBookingsPage() {
   const location = useLocation()
@@ -90,7 +91,7 @@ export function MyBookingsPage() {
                   <h2 className="font-bold text-slate-900">
                     {slot.service.name}
                   </h2>
-                  <p className="mt-1 text-xs text-slate-500">{slot.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">{formatSlotLabel(slot.label)}</p>
                 </div>
                 <BookingStatusBadge status={booking.status} />
               </div>

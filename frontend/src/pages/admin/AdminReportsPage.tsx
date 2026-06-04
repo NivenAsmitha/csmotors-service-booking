@@ -15,6 +15,7 @@ import {
 import { getUsers } from '../../features/users/users.api'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate, getLocalDateKey } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 type ReportTab = 'summary' | 'daily' | 'weekly' | 'monthly' | 'employee'
 
@@ -292,7 +293,7 @@ function EmployeeSection() {
                       <td className="whitespace-nowrap px-4 py-3">{formatDate(assignment.date)}</td>
                       <td className="whitespace-nowrap px-4 py-3">{assignment.client.name}</td>
                       <td className="whitespace-nowrap px-4 py-3">{assignment.service.name}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{assignment.slot_label}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{formatSlotLabel(assignment.slot_label)}</td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <p>{assignment.bike_number || 'Not provided'}</p>
                         <p className="mt-1 text-xs text-slate-500">

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BookingStatusBadge } from '../../components/ui/BookingStatusBadge'
+import { Badge } from '../../components/ui/Badge'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Select } from '../../components/ui/Select'
 import {
@@ -15,6 +16,7 @@ import { useAuthStore } from '../../stores/auth.store'
 import type { BookingStatus } from '../../types/booking'
 import { getApiErrorMessage } from '../../utils/api-error'
 import { formatDate } from '../../utils/dates'
+import { formatSlotLabel } from '../../utils/formatSlotLabel'
 
 const statusOptions = [
   { label: 'Pending', value: 'pending' },
@@ -199,7 +201,10 @@ export function AdminBookingsPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <p className="font-semibold text-slate-900">{slot.service.name}</p>
-                        <p className="mt-1 text-xs text-slate-500">{slot.label}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <p className="text-xs text-slate-500">{formatSlotLabel(slot.label)}</p>
+                          {slot.is_default === false ? <Badge variant="info">Extra Slot</Badge> : null}
+                        </div>
                         <p className="mt-1 text-xs text-slate-500">
                           {booking.bike_number || 'No bike number'}
                         </p>
@@ -213,6 +218,8 @@ export function AdminBookingsPage() {
                           <p className="mt-1 text-xs text-slate-500">
                             {slot.start_time} - {slot.end_time}
                           </p>
+                        ) : slot.is_default === false ? (
+                          <p className="mt-1 text-xs text-slate-500">No fixed time</p>
                         ) : null}
                       </td>
                       <td className="px-4 py-3">

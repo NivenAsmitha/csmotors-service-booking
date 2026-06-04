@@ -5,14 +5,21 @@ export type TimeSlot = {
   id: string
   service_id: string
   label: string
-  start_time: string
-  end_time: string
+  start_time: string | null
+  end_time: string | null
   is_default: boolean
   show_time: boolean
 }
 
 export type SlotsConfigService = Service & {
   timeSlots: TimeSlot[]
+}
+
+export type CreateExtraDaySlotPayload = {
+  service_id: string
+  date: string
+  extra_count: number
+  show_time_override?: boolean | null
 }
 
 export async function getSlotsConfig() {
@@ -34,5 +41,10 @@ export async function updateDaySlotClosed(
   const response = await api.patch(`/day-slots/${daySlotId}/close`, {
     is_closed,
   })
+  return response.data
+}
+
+export async function createExtraDaySlot(payload: CreateExtraDaySlotPayload) {
+  const response = await api.post('/day-slots/extra', payload)
   return response.data
 }

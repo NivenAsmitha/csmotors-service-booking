@@ -99,7 +99,7 @@ export class EmailService {
         `Service: ${details.serviceName}`,
         `Date: ${details.bookingDate}`,
         `Slot label: ${details.slotLabel}`,
-        `Exact internal time: ${details.startTime} - ${details.endTime}`,
+        `Exact internal time: ${formatTimeRange(details.startTime, details.endTime)}`,
         `Bike number: ${details.bikeNumber || 'Not provided'}`,
         `Bike model: ${details.bikeModel || 'Not provided'}`,
         `Notes: ${details.notes || 'None'}`,
@@ -211,7 +211,7 @@ function newBookingEmailTemplate(details: NewBookingEmailDetails) {
         ${detailRow('Service', details.serviceName)}
         ${detailRow('Date', details.bookingDate)}
         ${detailRow('Slot label', details.slotLabel)}
-        ${detailRow('Exact internal time', `${details.startTime} - ${details.endTime}`, true)}
+        ${detailRow('Exact internal time', formatTimeRange(details.startTime, details.endTime), true)}
         ${detailRow('Bike number', details.bikeNumber || 'Not provided')}
         ${detailRow('Bike model', details.bikeModel || 'Not provided')}
         ${detailRow('Notes', details.notes || 'None')}
@@ -251,6 +251,10 @@ function detailRow(label: string, value: string, highlight = false) {
       <p style="margin: 0; color: ${highlight ? '#166534' : '#0f172a'}; font-size: 14px; font-weight: ${highlight ? '700' : '500'}; line-height: 1.6;">${escapeHtml(value)}</p>
     </div>
   `;
+}
+
+function formatTimeRange(startTime: string, endTime: string) {
+  return endTime ? `${startTime} - ${endTime}` : startTime;
 }
 
 function emailLayout({

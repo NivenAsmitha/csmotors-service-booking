@@ -9,6 +9,7 @@ import { type AuthenticatedUser } from '../auth/auth.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UpdateGlobalTimeModeDto } from './dto/update-global-time-mode.dto';
+import { UpdateTodayServicesDisplayDto } from './dto/update-today-services-display.dto';
 import { SettingsService } from './settings.service';
 
 @ApiTags('settings')
@@ -34,6 +35,26 @@ export class SettingsController {
     return this.settingsService.updateTimeMode(
       currentUser.id,
       updateGlobalTimeModeDto,
+    );
+  }
+
+  @Roles(UserRole.admin, UserRole.it_support, UserRole.developer)
+  @ApiOperation({ summary: 'Get the Today Services Display setting' })
+  @Get('today-services-display')
+  getTodayServicesDisplay() {
+    return this.settingsService.getTodayServicesDisplay();
+  }
+
+  @Roles(UserRole.admin, UserRole.it_support)
+  @ApiOperation({ summary: 'Update the Today Services Display setting' })
+  @Patch('today-services-display')
+  updateTodayServicesDisplay(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() updateTodayServicesDisplayDto: UpdateTodayServicesDisplayDto,
+  ) {
+    return this.settingsService.updateTodayServicesDisplay(
+      currentUser.id,
+      updateTodayServicesDisplayDto,
     );
   }
 }

@@ -11,6 +11,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
@@ -19,28 +20,76 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
+import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@Roles(UserRole.developer, UserRole.admin, UserRole.it_support)
+@Roles(UserRole.developer, UserRole.admin)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'List all users' })
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@CurrentUser() currentUser: AuthenticatedUser) {
+    return this.usersService.findAll(currentUser.role);
+  }
+
+  @ApiOperation({ summary: 'Get the authenticated user profile' })
+  @Roles(
+    UserRole.developer,
+    UserRole.admin,
+    UserRole.it_support,
+    UserRole.employee,
+    UserRole.client,
+  )
+  @Get('me')
+  getMe(@CurrentUser() currentUser: AuthenticatedUser) {
+    return this.usersService.findOne(currentUser.id);
+  }
+
+  @ApiOperation({ summary: 'Update the authenticated user profile' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Profile updated. If email changed, a new verification OTP is sent.',
+  })
+  @Patch('me')
+  @Roles(
+    UserRole.developer,
+    UserRole.admin,
+    UserRole.it_support,
+    UserRole.employee,
+    UserRole.client,
+  )
+  updateMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() updateMyProfileDto: UpdateMyProfileDto,
+  ) {
+    return this.usersService.updateMyProfile(
+      currentUser.id,
+      updateMyProfileDto,
+    );
+  }
+
+  @ApiOperation({ summary: 'List active employees for assignment selection' })
+  @Roles(UserRole.developer, UserRole.admin, UserRole.it_support)
+  @Get('employees/active')
+  findActiveEmployees() {
+    return this.usersService.findActiveEmployees();
   }
 
   @ApiOperation({ summary: 'Get one user' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @Roles(UserRole.developer, UserRole.admin)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.usersService.findOneForManagement(id, currentUser.role);
   }
 
   @ApiOperation({ summary: 'Create an internal user' })
@@ -58,6 +107,10 @@ export class UsersController {
   }
 
   @ApiOperation({ summary: 'Reset a user password as a developer' })
+  @ApiResponse({
+    status: 403,
+    description: 'Developer accounts are protected.',
+  })
   @ApiParam({ name: 'id', description: 'User ID' })
   @Roles(UserRole.developer)
   @Patch(':id/password')
@@ -75,7 +128,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @Roles(UserRole.admin)
+  @Roles(UserRole.developer, UserRole.admin)
   @Patch(':id')
   update(
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -92,12 +145,12 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Soft delete a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @Roles(UserRole.admin)
+  @Roles(UserRole.developer, UserRole.admin)
   @Delete(':id')
   remove(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('id') id: string,
   ) {
-    return this.usersService.remove(currentUser.id, id);
+    return this.usersService.remove(currentUser.id, currentUser.role, id);
   }
 }
