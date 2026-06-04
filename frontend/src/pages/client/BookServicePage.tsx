@@ -334,7 +334,8 @@ export function BookServicePage() {
         </Button>
       </Card>
       <ConfirmDialog
-        confirmText="Create booking"
+        cancelText="No"
+        confirmText="Yes, Create booking"
         loading={bookingMutation.isPending}
         message={
           <div className="space-y-1">

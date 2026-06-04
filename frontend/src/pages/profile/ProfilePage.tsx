@@ -243,7 +243,8 @@ export function ProfilePage() {
       </div>
 
       <ConfirmDialog
-        confirmText="Save changes"
+        cancelText="No"
+        confirmText="Yes, Save changes"
         loading={profileMutation.isPending}
         message="Update your profile details?"
         onCancel={() => setPendingProfile(null)}
@@ -257,7 +258,8 @@ export function ProfilePage() {
         variant="default"
       />
       <ConfirmDialog
-        confirmText="Change password"
+        cancelText="No"
+        confirmText="Yes, Change password"
         loading={passwordMutation.isPending}
         message="Change your account password?"
         onCancel={() => setPendingPassword(null)}

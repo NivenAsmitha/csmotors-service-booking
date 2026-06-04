@@ -87,7 +87,7 @@ export function EmployeeDashboardPage() {
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">Contact:</span>{" "}
-                  {booking.client.phone || booking.client.email}
+                  {booking.client.phone || "No phone provided"}
                 </p>
                 <p>
                   <span className="font-semibold text-slate-800">Date:</span>{" "}

@@ -226,9 +226,6 @@ export function AdminBookingsPage() {
                         {assignment ? (
                           <>
                             <p>{employeesById.get(assignment.employee_id) ?? 'Assigned employee'}</p>
-                            <p className="mt-1 text-xs text-slate-500">
-                              {assignment.vehicle_ref || 'No bike reference'}
-                            </p>
                           </>
                         ) : (
                           <span className="text-xs text-slate-500">Unassigned</span>

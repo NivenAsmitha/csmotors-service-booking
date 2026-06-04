@@ -152,7 +152,8 @@ export function MyBookingsPage() {
         })}
       </div>
       <ConfirmDialog
-        confirmText="Cancel booking"
+        cancelText="No"
+        confirmText="Yes, Cancel booking"
         loading={cancellationMutation.isPending}
         message="Cancel this service booking? This action cannot be undone."
         onCancel={() => setCancelBookingId(null)}
