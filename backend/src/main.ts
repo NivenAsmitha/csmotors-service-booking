@@ -10,16 +10,31 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  const frontendUrls = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  const rawFrontendUrl =
+    process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  const allowedOrigins = rawFrontendUrl
     .split(',')
-    .map((url) => url.trim())
+    .map((origin) => origin.trim())
     .filter(Boolean);
 
-  console.log('Allowed frontend origins:', frontendUrls);
+  console.log('Allowed frontend origins:', allowedOrigins);
 
   app.enableCors({
-    origin: frontendUrls,
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`), false);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.setGlobalPrefix('api');
