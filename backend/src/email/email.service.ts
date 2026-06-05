@@ -42,9 +42,7 @@ export class EmailService {
       process.env.RESEND_API_KEY?.trim();
 
     this.from =
-      configService.get<string>('MAIL_FROM')?.trim() ||
-      process.env.MAIL_FROM?.trim() ||
-      'CS Motors <onboarding@resend.dev>';
+      process.env.MAIL_FROM?.trim() || 'CS Motors <onboarding@resend.dev>';
     this.resend = apiKey ? new Resend(apiKey) : undefined;
 
     this.logger.log(`RESEND_API_KEY configured: ${Boolean(apiKey)}`);
@@ -158,20 +156,27 @@ export class EmailService {
       return;
     }
 
-    const { data, error } = await this.resend.emails.send({
-      from: this.from,
-      to: email.to,
-      subject: email.subject,
-      text: email.text,
-      html: email.html,
-    });
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to: email.to,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
+      });
 
-    if (error) {
-      this.logger.error(`Resend send failed: ${JSON.stringify(error)}`);
-      throw new Error(error.message || 'Resend email failed');
+      if (error) {
+        this.logger.error(`Resend send failed: ${JSON.stringify(error)}`);
+        throw new Error(error.message || 'Resend email failed');
+      }
+
+      this.logger.log(`Email sent with Resend id: ${data?.id}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.stack || error.message : String(error);
+      this.logger.error(`Resend send threw an error: ${message}`);
+      throw error;
     }
-
-    this.logger.log(`Email sent with Resend id: ${data?.id}`);
   }
 }
 

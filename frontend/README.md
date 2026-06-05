@@ -5,9 +5,34 @@ This template provides a minimal setup to get React working in Vite with HMR and
 ## Production URLs
 
 - Frontend: https://csmotorsservice.lk
-- Backend API: https://api.csmotorsservice.lk/api
-- Swagger: https://api.csmotorsservice.lk/api/docs
+- Frontend (www): https://www.csmotorsservice.lk
+- Backend API: https://csmotors-service-booking-production.up.railway.app/api
+- Swagger: https://csmotors-service-booking-production.up.railway.app/api/docs
 - Email From: CS Motors <no-reply@csmotorsservice.lk>
+
+## Production Deployment
+
+Railway backend variables:
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET=<long-random-secret>
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=<long-random-refresh-secret>
+JWT_REFRESH_EXPIRES_IN=7d
+FRONTEND_URL=https://csmotorsservice.lk,https://www.csmotorsservice.lk
+RESEND_API_KEY=<new-resend-api-key>
+MAIL_FROM=CS Motors <no-reply@csmotorsservice.lk>
+```
+
+Vercel frontend variable:
+
+```env
+VITE_API_URL=https://csmotors-service-booking-production.up.railway.app/api
+```
+
+`MAIL_FROM=CS Motors <no-reply@csmotorsservice.lk>` only works after the
+Resend domain status is Verified.
 
 Currently, two official plugins are available:
 

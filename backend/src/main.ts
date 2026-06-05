@@ -11,7 +11,8 @@ async function bootstrap() {
   app.use(helmet());
 
   const rawFrontendUrl =
-    process.env.FRONTEND_URL || 'http://localhost:5173';
+    process.env.FRONTEND_URL ||
+    'http://localhost:5173,http://127.0.0.1:5173';
 
   const allowedOrigins = rawFrontendUrl
     .split(',')
@@ -30,7 +31,8 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      return callback(new Error(`CORS blocked origin: ${origin}`), false);
+      console.warn(`CORS blocked origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
