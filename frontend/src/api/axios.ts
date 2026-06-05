@@ -1,8 +1,11 @@
 import axios, { type AxiosError } from 'axios'
 import { getStoredAccessToken, useAuthStore } from '../stores/auth.store'
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
 })
 
 api.interceptors.request.use((config) => {
