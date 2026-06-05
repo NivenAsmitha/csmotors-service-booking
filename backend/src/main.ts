@@ -10,8 +10,15 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  const frontendUrls = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  console.log('Allowed frontend origins:', frontendUrls);
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: frontendUrls,
     credentials: true,
   });
 
